@@ -8,14 +8,14 @@ import (
 // This is based on the "antiquicksort" implementation by M. Douglas McIlroy.
 // See https://www.cs.dartmouth.edu/~doug/mdmspe.pdf for more info.
 type adversaryTestingData struct {
-	t         *testing.T
-	data      []int // item values, initialized to special gas value and changed by Less
+	t            *testing.T
+	data         []int // item values, initialized to special gas value and changed by Less
 	originalVals []int
-	maxcmp    int   // number of comparisons allowed
-	ncmp      int   // number of comparisons (calls to Less)
-	nsolid    int   // number of elements that have been set to non-gas values
-	candidate int   // guess at current pivot
-	gas       int   // special value for unset elements, higher than everything else
+	maxcmp       int // number of comparisons allowed
+	ncmp         int // number of comparisons (calls to Less)
+	nsolid       int // number of elements that have been set to non-gas values
+	candidate    int // guess at current pivot
+	gas          int // special value for unset elements, higher than everything else
 }
 
 func (d *adversaryTestingData) Len() int { return len(d.data) }
@@ -64,7 +64,7 @@ func newAdversaryTestingData(t *testing.T, size int, maxcmp int) *adversaryTesti
 }
 
 func TestAdversary(t *testing.T) {
-	const size = 500            // large enough to distinguish between O(n^2) and O(n*log(n))
+	const size = 500              // large enough to distinguish between O(n^2) and O(n*log(n))
 	maxcmp := size * lg(size) * 4 // the factor 4 was found by trial and error
 	d := newAdversaryTestingData(t, size, maxcmp)
 	sort.Sort(d) // This should degenerate to heapsort.

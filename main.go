@@ -2,21 +2,22 @@ package main
 
 import (
 	"fmt"
-	"github.com/cep21/geneticsort/genetic"
-	"github.com/cep21/geneticsort/internal/arraysort"
 	"math/rand"
 	"runtime"
 	"time"
+
+	"github.com/cep21/geneticsort/genetic"
+	"github.com/cep21/geneticsort/internal/arraysort"
 )
 
 func main() {
 	r := &genetic.LockedRand{G: rand.New(rand.NewSource(0))}
 	a := genetic.Algorithm{
-		ParentSelector: &genetic.TournamentParentSelector {
+		ParentSelector: &genetic.TournamentParentSelector{
 			R: r,
 			//K: 4,
 		},
-		Factory: &arraysort.ArraySortingFactory {
+		Factory: &arraysort.ArraySortingFactory{
 			R: r,
 			// 100 is 1332
 			// 500 is 13989
@@ -29,12 +30,12 @@ func main() {
 			R: r,
 		},
 		Mutator: &genetic.LookAheadMutator{
-			R: r,
+			R:             r,
 			MutationRatio: 10,
 		},
 		NumberOfParents: 2,
-		PopulationSize: 5000,
-		NumGoroutine: runtime.NumCPU(),
+		PopulationSize:  5000,
+		NumGoroutine:    runtime.NumCPU(),
 	}
 	fittest := a.Run()
 	fittest.(genetic.Simplifyable).Simplify()

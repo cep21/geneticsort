@@ -1,0 +1,23 @@
+language: go
+
+sudo: false
+
+env:
+  global:
+    - GO111MODULE=on
+
+go:
+  - "1.12"
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+
+before_install: cd v3
+install:
+  - make setup_ci
+
+script:
+  - make build
+  - make test
+  - go mod vendor && GO111MODULE=off PATH=$TRAVIS_BUILD_DIR/bin:$PATH make lint

@@ -2,13 +2,14 @@ package arraysort
 
 import (
 	"fmt"
-	"github.com/cep21/geneticsort/genetic"
 	"sort"
 	"strings"
+
+	"github.com/cep21/geneticsort/genetic"
 )
 
 type arraySortingIndividual struct {
-	vals []int
+	vals    []int
 	fitness *int
 }
 
@@ -49,7 +50,7 @@ var _ genetic.Array = &arraySortingIndividual{}
 
 func (c *arraySortingIndividual) String() string {
 	var s strings.Builder
-	for i :=0;i<len(c.vals);i++ {
+	for i := 0; i < len(c.vals); i++ {
 		if i != 0 {
 			mustPrint(s.WriteString(","))
 		}
@@ -59,17 +60,18 @@ func (c *arraySortingIndividual) String() string {
 }
 
 type ArraySortingFactory struct {
-	R genetic.GeneticRand
+	R              genetic.Rand
 	IndividualSize int
 }
+
 var _ genetic.IndividualFactory = &ArraySortingFactory{}
 
 func (a *ArraySortingFactory) Spawn() genetic.Individual {
 	c := &arraySortingIndividual{
 		vals: make([]int, a.IndividualSize),
 	}
-	for i :=0;i<a.IndividualSize;i++ {
-		c.vals[i]=a.R.Intn(10000)
+	for i := 0; i < a.IndividualSize; i++ {
+		c.vals[i] = a.R.Intn(10000)
 	}
 	return c
 }
