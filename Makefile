@@ -4,6 +4,9 @@ BENCH_RUN ?= .
 build:
 	go build ./...
 
+run:
+	go run main.go
+
 # Run unit tests
 test:
 	env "GORACE=halt_on_error=1" go test -v -race ./...

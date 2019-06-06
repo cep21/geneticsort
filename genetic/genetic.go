@@ -1,6 +1,7 @@
 package genetic
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"sort"
@@ -128,15 +129,32 @@ func (a *SwapMutator) Mutate(in Individual) Individual {
 	return asS
 }
 
+type DynamicMutation interface {
+	IncreaseMutationRate()
+	ResetMutationRate()
+}
+
 var _ Mutator = &SwapMutator{}
 
 type LookAheadMutator struct {
-	MutationRatio int
-	R             Rand
+	MutationRatio         int
+	currentMutationRation int
+	R                     Rand
+}
+
+func (a *LookAheadMutator) IncreaseMutationRate() {
+	a.currentMutationRation--
+	if a.currentMutationRation <= 1 {
+		a.currentMutationRation = 1
+	}
+}
+
+func (a *LookAheadMutator) ResetMutationRate() {
+	a.currentMutationRation = a.MutationRatio
 }
 
 func (a *LookAheadMutator) Mutate(in Individual) Individual {
-	if a.R.Intn(a.MutationRatio) != 0 {
+	if a.R.Intn(a.currentMutationRation) != 0 {
 		return in
 	}
 	asSwap, ok := in.(Array)
@@ -160,6 +178,7 @@ func (a *LookAheadMutator) Mutate(in Individual) Individual {
 }
 
 var _ Mutator = &LookAheadMutator{}
+var _ DynamicMutation = &LookAheadMutator{}
 
 type Rand interface {
 	Intn(int) int
@@ -344,6 +363,7 @@ func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, num
 }
 
 type Algorithm struct {
+	Log             *log.Logger
 	ParentSelector  ParentSelector
 	Factory         IndividualFactory
 	Terminator      ExecutionTerminator
@@ -357,14 +377,26 @@ type Algorithm struct {
 func (a *Algorithm) Run() Individual {
 	currentPopulation := SpawnPopulation(a.PopulationSize, a.Factory)
 	best := currentPopulation.Max()
+	asDynamic, isDynamic := a.Mutator.(DynamicMutation)
+	if isDynamic {
+		asDynamic.ResetMutationRate()
+	}
 	for {
-		//fmt.Println("Currently at mean/max", currentPopulation.Average(), currentPopulation.Max().Fitness())
+		if a.Log != nil {
+			a.Log.Println("Currently at mean/max", currentPopulation.Average(), currentPopulation.Max().Fitness())
+		}
 		if a.Terminator.StopExecution(currentPopulation) {
 			return best
 		}
 		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Breeder, a.Mutator, a.NumberOfParents, a.NumGoroutine)
-		if best.Fitness() < nextPopulation.Max().Fitness() {
+		nextBest := nextPopulation.Max()
+		if best.Fitness() < nextBest.Fitness() {
 			best = nextPopulation.Max()
+			if isDynamic {
+				asDynamic.ResetMutationRate()
+			}
+		} else if isDynamic {
+			asDynamic.IncreaseMutationRate()
 		}
 		currentPopulation = nextPopulation
 	}

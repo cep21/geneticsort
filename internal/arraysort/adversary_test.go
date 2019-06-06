@@ -1,8 +1,12 @@
 package arraysort
 
 import (
+	"math/rand"
+	"runtime"
 	"sort"
 	"testing"
+
+	"github.com/cep21/geneticsort/genetic"
 )
 
 // This is based on the "antiquicksort" implementation by M. Douglas McIlroy.
@@ -63,8 +67,9 @@ func newAdversaryTestingData(t *testing.T, size int, maxcmp int) *adversaryTesti
 	return &adversaryTestingData{t: t, data: data, originalVals: ov, maxcmp: maxcmp, gas: gas}
 }
 
+// Copy/paste from the go STDLIB, but modified to return the generated array.
 func TestAdversary(t *testing.T) {
-	const size = 500              // large enough to distinguish between O(n^2) and O(n*log(n))
+	const size = 1000             // large enough to distinguish between O(n^2) and O(n*log(n))
 	maxcmp := size * lg(size) * 4 // the factor 4 was found by trial and error
 	d := newAdversaryTestingData(t, size, maxcmp)
 	sort.Sort(d) // This should degenerate to heapsort.
@@ -91,4 +96,55 @@ func lg(n int) int {
 		i++
 	}
 	return i
+}
+
+func BenchmarkGeneticRegular(b *testing.B) {
+	type benchmarkRun struct {
+		name string
+
+		popSize   int
+		arraySize int
+	}
+
+	runs := []benchmarkRun{
+		{
+			name:      "100/100",
+			popSize:   100,
+			arraySize: 100,
+		},
+		{
+			name:      "2000/500",
+			popSize:   2000,
+			arraySize: 500,
+		},
+	}
+	for _, run := range runs {
+		run := run
+		b.Run(run.name, func(b *testing.B) {
+			r := &genetic.LockedRand{G: rand.New(rand.NewSource(0))}
+			a := genetic.Algorithm{
+				ParentSelector: &genetic.TournamentParentSelector{
+					R: r,
+				},
+				Factory: &ArraySortingFactory{
+					R:              r,
+					IndividualSize: run.arraySize,
+				},
+				Terminator: &genetic.CountingExecutor{
+					Limit: b.N,
+				},
+				Breeder: &genetic.SplitReproduce{
+					R: r,
+				},
+				Mutator: &genetic.LookAheadMutator{
+					R:             r,
+					MutationRatio: 10,
+				},
+				NumberOfParents: 2,
+				PopulationSize:  run.popSize,
+				NumGoroutine:    runtime.NumCPU(),
+			}
+			a.Run()
+		})
+	}
 }
