@@ -13,7 +13,6 @@ cache:
   directories:
     - $GOPATH/pkg/mod
 
-before_install: cd v3
 install:
   - make setup_ci
 
