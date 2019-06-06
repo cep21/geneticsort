@@ -1,6 +1,7 @@
 package genetic
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -13,6 +14,7 @@ type Individual interface {
 	Fitness() int
 	Clone() Individual
 	Shell() Individual
+	String() string
 }
 
 type RandForIndex interface {
@@ -80,11 +82,16 @@ type Array interface {
 
 type ExecutionTerminator interface {
 	StopExecution(p Population, r Rand) bool
+	String() string
 }
 
 type CountingExecutor struct {
 	Limit int
 	i     int
+}
+
+func (c *CountingExecutor) String() string {
+	return fmt.Sprintf("counting-%d", c.Limit)
 }
 
 func (c *CountingExecutor) StopExecution(p Population, _ Rand) bool {
@@ -101,6 +108,10 @@ type TimingExecutor struct {
 	Duration  time.Duration
 	startTime time.Time
 	Now       func() time.Time
+}
+
+func (c *TimingExecutor) String() string {
+	return fmt.Sprintf("timing-%s", c.Duration.String())
 }
 
 func (c *TimingExecutor) now() time.Time {
@@ -122,18 +133,25 @@ var _ ExecutionTerminator = &TimingExecutor{}
 
 type IndividualFactory interface {
 	Spawn(G Rand) Individual
+	Family() string
 }
 
 type Mutator interface {
 	Mutate(in Individual, r Rand) Individual
+	String() string
 }
 
 type Breeder interface {
 	Reproduce(in []Individual, r Rand) Individual
+	String() string
 }
 
 type SwapMutator struct {
 	MutationRatio int
+}
+
+func (a *SwapMutator) String() string {
+	return fmt.Sprintf("swap-%d", a.MutationRatio)
 }
 
 func (a *SwapMutator) Mutate(in Individual, r Rand) Individual {
@@ -167,6 +185,10 @@ var _ Mutator = &SwapMutator{}
 type LookAheadMutator struct {
 	MutationRatio         int
 	currentMutationRation int
+}
+
+func (a *LookAheadMutator) String() string {
+	return fmt.Sprintf("lookahead-%d", a.MutationRatio)
 }
 
 func (a *LookAheadMutator) IncreaseMutationRate(_ Rand) {
@@ -218,6 +240,10 @@ var _ Rand = &rand.Rand{}
 type SplitReproduce struct {
 }
 
+func (s *SplitReproduce) String() string {
+	return fmt.Sprintf("split")
+}
+
 func (s *SplitReproduce) Reproduce(in []Individual, r Rand) Individual {
 	if len(in) == 0 {
 		return nil
@@ -249,10 +275,15 @@ var _ Breeder = &SplitReproduce{}
 
 type ParentSelector interface {
 	PickParent([]Individual, Rand) int
+	String() string
 }
 
 type TournamentParentSelector struct {
 	K int
+}
+
+func (s TournamentParentSelector) String() string {
+	return fmt.Sprintf("K-Tournament-%d", s.K)
 }
 
 func (s TournamentParentSelector) PickParent(c []Individual, r Rand) int {

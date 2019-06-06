@@ -65,6 +65,10 @@ type ArraySortingFactory struct {
 
 var _ genetic.IndividualFactory = &ArraySortingFactory{}
 
+func (a *ArraySortingFactory) Family() string {
+	return fmt.Sprintf("intarray-sort-%d", a.IndividualSize)
+}
+
 func (a *ArraySortingFactory) Spawn(r genetic.Rand) genetic.Individual {
 	c := &arraySortingIndividual{
 		vals: make([]int, a.IndividualSize),

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
@@ -8,6 +9,11 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/cep21/geneticsort/internal/record"
+	"github.com/cep21/geneticsort/internal/record/dynamorecord"
 
 	"github.com/cep21/geneticsort/genetic"
 	"github.com/cep21/geneticsort/internal/arraysort"
@@ -19,6 +25,8 @@ type runConfig struct {
 	Duration       time.Duration
 	MutationRation int
 	PopulationSize int
+	Seed           int
+	DynamoDBTable  string
 }
 
 func load() runConfig {
@@ -27,7 +35,9 @@ func load() runConfig {
 	ret.KTournament = mustOsInt("K_TOURNAMENT", 3)
 	ret.MutationRation = mustOsInt("MUTATION_RATION", 30)
 	ret.PopulationSize = mustOsInt("POPULATION_SIZE", 1000)
+	ret.Seed = mustOsInt("RAND_SEED", 0)
 	ret.Duration = mustOsDur("RUN_TIME", time.Minute)
+	ret.DynamoDBTable = os.Getenv("DYNAMODB_TABLE")
 	return ret
 }
 
@@ -60,7 +70,7 @@ func mustOsDur(s string, defaultVal time.Duration) time.Duration {
 func main() {
 	conf := load()
 	a := genetic.Algorithm{
-		RandForIndex: genetic.ArrayRandForIdx(conf.PopulationSize, 0, func(seed int64) genetic.Rand {
+		RandForIndex: genetic.ArrayRandForIdx(conf.PopulationSize, int64(conf.Seed), func(seed int64) genetic.Rand {
 			return rand.New(rand.NewSource(seed))
 		}),
 		Log: log.New(os.Stdout, "", log.LstdFlags),
@@ -88,4 +98,18 @@ func main() {
 	fittest := a.Run()
 	fittest.(genetic.Simplifyable).Simplify()
 	fmt.Println(fittest)
+	if conf.DynamoDBTable != "" {
+		ses := session.Must(session.NewSession())
+		ddb := dynamodb.New(ses)
+		drec := &dynamorecord.Recorder{
+			Client:    ddb,
+			TableName: conf.DynamoDBTable,
+		}
+		if err := drec.Record(context.Background(), record.Record{
+			Algorithm:     a,
+			BestCandidate: fittest,
+		}); err != nil {
+			panic(err)
+		}
+	}
 }
