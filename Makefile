@@ -11,6 +11,12 @@ run:
 test:
 	env "GORACE=halt_on_error=1" go test -v -race ./...
 
+create_stack:
+	./create_stack.sh
+
+build_docker:
+	docker build -t geneticsort:latest .
+
 # Format the code
 fix:
 	find . -iname '*.go' -not -path '*/vendor/*' -print0 | xargs -0 gofmt -s -w

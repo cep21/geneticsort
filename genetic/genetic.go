@@ -444,6 +444,9 @@ func (a *Algorithm) Run() Individual {
 			a.Log.Println("Currently at mean/max", currentPopulation.Average(), currentPopulation.Max().Fitness())
 		}
 		if a.Terminator.StopExecution(currentPopulation, a.RandForIndex.Rand(0)) {
+			if asSimpl, canSimpl := best.(Simplifyable); canSimpl {
+				asSimpl.Simplify()
+			}
 			return best
 		}
 		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Breeder, a.Mutator, a.NumberOfParents, a.NumGoroutine, a.RandForIndex)

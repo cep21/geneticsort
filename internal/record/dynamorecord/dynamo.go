@@ -23,6 +23,9 @@ func (d *Recorder) Record(ctx context.Context, r record.Record) error {
 			"key": {
 				S: aws.String(r.Hash()),
 			},
+			"best": {
+				S: aws.String(r.BestCandidate.String()),
+			},
 			"fitness": {
 				N: aws.String(strconv.Itoa(r.BestCandidate.Fitness())),
 			},
