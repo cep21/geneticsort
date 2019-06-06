@@ -60,18 +60,17 @@ func (c *arraySortingIndividual) String() string {
 }
 
 type ArraySortingFactory struct {
-	R              genetic.Rand
 	IndividualSize int
 }
 
 var _ genetic.IndividualFactory = &ArraySortingFactory{}
 
-func (a *ArraySortingFactory) Spawn() genetic.Individual {
+func (a *ArraySortingFactory) Spawn(r genetic.Rand) genetic.Individual {
 	c := &arraySortingIndividual{
 		vals: make([]int, a.IndividualSize),
 	}
 	for i := 0; i < a.IndividualSize; i++ {
-		c.vals[i] = a.R.Intn(10000)
+		c.vals[i] = r.Int()
 	}
 	return c
 }

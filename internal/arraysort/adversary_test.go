@@ -121,23 +121,21 @@ func BenchmarkGeneticRegular(b *testing.B) {
 	for _, run := range runs {
 		run := run
 		b.Run(run.name, func(b *testing.B) {
-			r := &genetic.LockedRand{G: rand.New(rand.NewSource(0))}
 			a := genetic.Algorithm{
+				RandForIndex: genetic.ArrayRandForIdx(run.popSize, 0, func(seed int64) genetic.Rand {
+					return rand.New(rand.NewSource(seed))
+				}),
 				ParentSelector: &genetic.TournamentParentSelector{
-					R: r,
 				},
 				Factory: &ArraySortingFactory{
-					R:              r,
 					IndividualSize: run.arraySize,
 				},
 				Terminator: &genetic.CountingExecutor{
 					Limit: b.N,
 				},
 				Breeder: &genetic.SplitReproduce{
-					R: r,
 				},
 				Mutator: &genetic.LookAheadMutator{
-					R:             r,
 					MutationRatio: 10,
 				},
 				NumberOfParents: 2,

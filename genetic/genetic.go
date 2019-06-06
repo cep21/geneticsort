@@ -15,6 +15,29 @@ type Individual interface {
 	Shell() Individual
 }
 
+type RandForIndex interface {
+	Rand(idx int) Rand
+}
+
+func ArrayRandForIdx(size int, seed int64, generator func(seed int64) Rand) RandForIndex {
+	start := generator(seed)
+	ret := &arrayRandForIdx{
+		rands: make([]Rand, size),
+	}
+	for i :=0;i<size;i++ {
+		ret.rands[i] = generator(start.Int63())
+	}
+	return ret
+}
+
+type arrayRandForIdx struct {
+	rands []Rand
+}
+
+func (a *arrayRandForIdx) Rand(idx int) Rand {
+	return a.rands[idx]
+}
+
 type LocalOptimization interface {
 	LocallyOptimize() Individual
 }
@@ -36,6 +59,12 @@ func (l *LockedRand) Int() int {
 	return l.G.Int()
 }
 
+func (l *LockedRand) Int63() int64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.G.Int63()
+}
+
 var _ Rand = &LockedRand{}
 
 type Simplifyable interface {
@@ -50,7 +79,7 @@ type Array interface {
 }
 
 type ExecutionTerminator interface {
-	StopExecution(p Population) bool
+	StopExecution(p Population, r Rand) bool
 }
 
 type CountingExecutor struct {
@@ -58,7 +87,7 @@ type CountingExecutor struct {
 	i     int
 }
 
-func (c *CountingExecutor) StopExecution(p Population) bool {
+func (c *CountingExecutor) StopExecution(p Population, _ Rand) bool {
 	if c.i >= c.Limit {
 		return true
 	}
@@ -81,7 +110,7 @@ func (c *TimingExecutor) now() time.Time {
 	return c.Now()
 }
 
-func (c *TimingExecutor) StopExecution(p Population) bool {
+func (c *TimingExecutor) StopExecution(p Population, _ Rand) bool {
 	if c.startTime.IsZero() {
 		c.startTime = c.now()
 	}
@@ -92,25 +121,24 @@ func (c *TimingExecutor) StopExecution(p Population) bool {
 var _ ExecutionTerminator = &TimingExecutor{}
 
 type IndividualFactory interface {
-	Spawn() Individual
+	Spawn(G  Rand) Individual
 }
 
 type Mutator interface {
-	Mutate(in Individual) Individual
+	Mutate(in Individual, r Rand) Individual
 }
 
 type Breeder interface {
-	Reproduce(in []Individual) Individual
+	Reproduce(in []Individual, r Rand) Individual
 }
 
 type SwapMutator struct {
 	MutationRatio int
-	R             Rand
 }
 
-func (a *SwapMutator) Mutate(in Individual) Individual {
+func (a *SwapMutator) Mutate(in Individual, r Rand) Individual {
 	if a.MutationRatio > 1 {
-		if a.R.Intn(a.MutationRatio) != 0 {
+		if r.Intn(a.MutationRatio) != 0 {
 			return in
 		}
 	}
@@ -119,8 +147,8 @@ func (a *SwapMutator) Mutate(in Individual) Individual {
 		panic("Trying to do swap mutation with something that isn't swappable")
 	}
 
-	i := a.R.Intn(asSwap.Len())
-	j := a.R.Intn(asSwap.Len())
+	i := r.Intn(asSwap.Len())
+	j := r.Intn(asSwap.Len())
 	if i == j {
 		return in
 	}
@@ -130,8 +158,8 @@ func (a *SwapMutator) Mutate(in Individual) Individual {
 }
 
 type DynamicMutation interface {
-	IncreaseMutationRate()
-	ResetMutationRate()
+	IncreaseMutationRate(r Rand)
+	ResetMutationRate(r Rand)
 }
 
 var _ Mutator = &SwapMutator{}
@@ -139,22 +167,21 @@ var _ Mutator = &SwapMutator{}
 type LookAheadMutator struct {
 	MutationRatio         int
 	currentMutationRation int
-	R                     Rand
 }
 
-func (a *LookAheadMutator) IncreaseMutationRate() {
+func (a *LookAheadMutator) IncreaseMutationRate(_ Rand) {
 	a.currentMutationRation--
 	if a.currentMutationRation <= 1 {
 		a.currentMutationRation = 1
 	}
 }
 
-func (a *LookAheadMutator) ResetMutationRate() {
+func (a *LookAheadMutator) ResetMutationRate(_ Rand) {
 	a.currentMutationRation = a.MutationRatio
 }
 
-func (a *LookAheadMutator) Mutate(in Individual) Individual {
-	if a.R.Intn(a.currentMutationRation) != 0 {
+func (a *LookAheadMutator) Mutate(in Individual, r Rand) Individual {
+	if r.Intn(a.currentMutationRation) != 0 {
 		return in
 	}
 	asSwap, ok := in.(Array)
@@ -162,13 +189,13 @@ func (a *LookAheadMutator) Mutate(in Individual) Individual {
 		panic("Trying to do swap mutation with something that isn't swappable")
 	}
 	newPerson := asSwap.Clone().(Array)
-	startingIndex := a.R.Intn(asSwap.Len())
+	startingIndex := r.Intn(asSwap.Len())
 	for i := 0; i < asSwap.Len(); i++ {
-		shouldSwap := a.R.Intn(asSwap.Len()) == 0
+		shouldSwap := r.Intn(asSwap.Len()) == 0
 		if !shouldSwap {
 			continue
 		}
-		swapWith := a.R.Intn(asSwap.Len())
+		swapWith := r.Intn(asSwap.Len())
 		if swapWith == i {
 			continue
 		}
@@ -183,15 +210,15 @@ var _ DynamicMutation = &LookAheadMutator{}
 type Rand interface {
 	Intn(int) int
 	Int() int
+	Int63() int64
 }
 
 var _ Rand = &rand.Rand{}
 
 type SplitReproduce struct {
-	R Rand
 }
 
-func (s *SplitReproduce) Reproduce(in []Individual) Individual {
+func (s *SplitReproduce) Reproduce(in []Individual, r Rand) Individual {
 	if len(in) == 0 {
 		return nil
 	}
@@ -205,8 +232,8 @@ func (s *SplitReproduce) Reproduce(in []Individual) Individual {
 	if !ok {
 		panic("split reproducer only allowed on swappable")
 	}
-	midPoint := s.R.Intn(asSwap.Len())
-	prefC := s.R.Intn(2)%2 == 0
+	midPoint := r.Intn(asSwap.Len())
+	prefC := r.Intn(2)%2 == 0
 	ret := in[0].Shell().(Array)
 	if prefC {
 		ret.Copy(in[0].(Array), 0, midPoint, 0)
@@ -221,22 +248,21 @@ func (s *SplitReproduce) Reproduce(in []Individual) Individual {
 var _ Breeder = &SplitReproduce{}
 
 type ParentSelector interface {
-	PickParent([]Individual) int
+	PickParent([]Individual, Rand) int
 }
 
 type TournamentParentSelector struct {
-	R Rand
 	K int
 }
 
-func (s TournamentParentSelector) PickParent(c []Individual) int {
+func (s TournamentParentSelector) PickParent(c []Individual, r Rand) int {
 	k := s.K
 	if k == 0 {
 		k = int(math.Log(float64(len(c))) + 1)
 	}
-	current := s.R.Intn(len(c))
+	current := r.Intn(len(c))
 	for i := 1; i < k; i++ {
-		other := s.R.Intn(len(c))
+		other := r.Intn(len(c))
 		if c[current].Fitness() < c[other].Fitness() {
 			current = other
 		}
@@ -251,12 +277,12 @@ type Population struct {
 	isSorted bool
 }
 
-func SpawnPopulation(n int, f IndividualFactory) Population {
+func SpawnPopulation(n int, f IndividualFactory, r Rand) Population {
 	ret := Population{
 		People: make([]Individual, n),
 	}
 	for i := range ret.People {
-		ret.People[i] = f.Spawn()
+		ret.People[i] = f.Spawn(r)
 	}
 	return ret
 }
@@ -324,17 +350,17 @@ func (p *Population) calculateFitness(numGoroutine int) {
 	wg.Wait()
 }
 
-func (p *Population) singleNextGenerationIteration(ps ParentSelector, b Breeder, m Mutator, numP int) Individual {
+func (p *Population) singleNextGenerationIteration(ps ParentSelector, b Breeder, m Mutator, numP int, rnd Rand) Individual {
 	parents := make([]Individual, numP)
 	for j := 0; j < numP; j++ {
-		parents[j] = p.People[ps.PickParent(p.People)]
+		parents[j] = p.People[ps.PickParent(p.People, rnd)]
 	}
-	newChild := b.Reproduce(parents)
-	mutatedChild := m.Mutate(newChild)
+	newChild := b.Reproduce(parents, rnd)
+	mutatedChild := m.Mutate(newChild, rnd)
 	return mutatedChild
 }
 
-func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, numP int, numGoroutine int) Population {
+func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, numP int, numGoroutine int, rnd RandForIndex) Population {
 	p.calculateFitness(numGoroutine)
 	ret := Population{
 		People: make([]Individual, len(p.People)),
@@ -349,7 +375,7 @@ func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, num
 		go func() {
 			defer wg.Done()
 			for idx := range idxChan {
-				ret.People[idx] = p.singleNextGenerationIteration(ps, b, m, numP)
+				ret.People[idx] = p.singleNextGenerationIteration(ps, b, m, numP, rnd.Rand(idx))
 			}
 		}()
 	}
@@ -358,12 +384,13 @@ func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, num
 	}
 	close(idxChan)
 	wg.Wait()
-	ret.People[len(ret.People)-1] = m.Mutate(p.Max())
+	ret.People[len(ret.People)-1] = m.Mutate(p.Max(), rnd.Rand(0))
 	return ret
 }
 
 type Algorithm struct {
 	Log             *log.Logger
+	RandForIndex    RandForIndex
 	ParentSelector  ParentSelector
 	Factory         IndividualFactory
 	Terminator      ExecutionTerminator
@@ -375,28 +402,28 @@ type Algorithm struct {
 }
 
 func (a *Algorithm) Run() Individual {
-	currentPopulation := SpawnPopulation(a.PopulationSize, a.Factory)
+	currentPopulation := SpawnPopulation(a.PopulationSize, a.Factory, a.RandForIndex.Rand(0))
 	best := currentPopulation.Max()
 	asDynamic, isDynamic := a.Mutator.(DynamicMutation)
 	if isDynamic {
-		asDynamic.ResetMutationRate()
+		asDynamic.ResetMutationRate(a.RandForIndex.Rand(0))
 	}
 	for {
 		if a.Log != nil {
 			a.Log.Println("Currently at mean/max", currentPopulation.Average(), currentPopulation.Max().Fitness())
 		}
-		if a.Terminator.StopExecution(currentPopulation) {
+		if a.Terminator.StopExecution(currentPopulation, a.RandForIndex.Rand(0)) {
 			return best
 		}
-		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Breeder, a.Mutator, a.NumberOfParents, a.NumGoroutine)
+		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Breeder, a.Mutator, a.NumberOfParents, a.NumGoroutine, a.RandForIndex)
 		nextBest := nextPopulation.Max()
 		if best.Fitness() < nextBest.Fitness() {
 			best = nextPopulation.Max()
 			if isDynamic {
-				asDynamic.ResetMutationRate()
+				asDynamic.ResetMutationRate(a.RandForIndex.Rand(0))
 			}
 		} else if isDynamic {
-			asDynamic.IncreaseMutationRate()
+			asDynamic.IncreaseMutationRate(a.RandForIndex.Rand(0))
 		}
 		currentPopulation = nextPopulation
 	}

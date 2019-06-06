@@ -58,16 +58,16 @@ func mustOsDur(s string, defaultVal time.Duration) time.Duration {
 }
 
 func main() {
-	r := &genetic.LockedRand{G: rand.New(rand.NewSource(0))}
 	conf := load()
 	a := genetic.Algorithm{
+		RandForIndex: genetic.ArrayRandForIdx(conf.PopulationSize, 0, func(seed int64) genetic.Rand {
+			return rand.New(rand.NewSource(seed))
+		}),
 		Log: log.New(os.Stdout, "", log.LstdFlags),
 		ParentSelector: &genetic.TournamentParentSelector{
-			R: r,
 			K: conf.KTournament,
 		},
 		Factory: &arraysort.ArraySortingFactory{
-			R: r,
 			// According to go stdlib TestAdversary
 			// - 100 is 1332
 			// - 500 is 13989
@@ -78,10 +78,8 @@ func main() {
 			Duration: conf.Duration,
 		},
 		Breeder: &genetic.SplitReproduce{
-			R: r,
 		},
 		Mutator: &genetic.LookAheadMutator{
-			R:             r,
 			MutationRatio: conf.MutationRation,
 		},
 		NumberOfParents: 2,

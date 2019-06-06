@@ -22,21 +22,21 @@ bench:
 
 # Get some memory profiles
 profile_memory:
-	go test -benchmem -run=^$$ -bench=$(PROFILE_RUN) -memprofile=mem.out ./benchmarking
-	go tool pprof --alloc_space benchmarking.test mem.out
-	rm -f mem.out benchmarking.test
+	go test -benchmem -run=^$$ -bench=$(PROFILE_RUN) -memprofile=mem.out ./internal/arraysort
+	go tool pprof --alloc_space arraysort.test mem.out
+	rm -f mem.out arraysort.test
 
 # Get some cpu profiles
 profile_cpu:
-	go test -run=^$$ -bench=$(PROFILE_RUN) -benchtime=15s -cpuprofile=cpu.out ./benchmarking
-	go tool pprof benchmarking.test cpu.out
-	rm -f cpu.out benchmarking.test
+	go test -run=^$$ -bench=$(PROFILE_RUN) -benchtime=15s -cpuprofile=cpu.out ./internal/arraysort
+	go tool pprof arraysort.test cpu.out
+	rm -f cpu.out arraysort.test
 
 # Get some cpu profiles
 profile_blocking:
-	go test -run=^$$ -bench=$(PROFILE_RUN) -benchtime=15s -blockprofile=block.out ./benchmarking
-	go tool pprof benchmarking.test block.out
-	rm -f block.out benchmarking.test
+	go test -run=^$$ -bench=$(PROFILE_RUN) -benchtime=15s -blockprofile=block.out ./internal/arraysort
+	go tool pprof arraysort.test block.out
+	rm -f block.out arraysort.test
 
 # Lint the code
 lint:
