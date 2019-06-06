@@ -24,7 +24,7 @@ func ArrayRandForIdx(size int, seed int64, generator func(seed int64) Rand) Rand
 	ret := &arrayRandForIdx{
 		rands: make([]Rand, size),
 	}
-	for i :=0;i<size;i++ {
+	for i := 0; i < size; i++ {
 		ret.rands[i] = generator(start.Int63())
 	}
 	return ret
@@ -121,7 +121,7 @@ func (c *TimingExecutor) StopExecution(p Population, _ Rand) bool {
 var _ ExecutionTerminator = &TimingExecutor{}
 
 type IndividualFactory interface {
-	Spawn(G  Rand) Individual
+	Spawn(G Rand) Individual
 }
 
 type Mutator interface {

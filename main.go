@@ -77,8 +77,7 @@ func main() {
 		Terminator: &genetic.TimingExecutor{
 			Duration: conf.Duration,
 		},
-		Breeder: &genetic.SplitReproduce{
-		},
+		Breeder: &genetic.SplitReproduce{},
 		Mutator: &genetic.LookAheadMutator{
 			MutationRatio: conf.MutationRation,
 		},

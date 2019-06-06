@@ -125,16 +125,14 @@ func BenchmarkGeneticRegular(b *testing.B) {
 				RandForIndex: genetic.ArrayRandForIdx(run.popSize, 0, func(seed int64) genetic.Rand {
 					return rand.New(rand.NewSource(seed))
 				}),
-				ParentSelector: &genetic.TournamentParentSelector{
-				},
+				ParentSelector: &genetic.TournamentParentSelector{},
 				Factory: &ArraySortingFactory{
 					IndividualSize: run.arraySize,
 				},
 				Terminator: &genetic.CountingExecutor{
 					Limit: b.N,
 				},
-				Breeder: &genetic.SplitReproduce{
-				},
+				Breeder: &genetic.SplitReproduce{},
 				Mutator: &genetic.LookAheadMutator{
 					MutationRatio: 10,
 				},
