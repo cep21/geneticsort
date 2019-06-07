@@ -4,6 +4,9 @@ set -exuo pipefail
 STACK_NAME=genetic-sort-stack
 STACK_FILE=file://cfstack.yaml
 
+# https://stackoverflow.com/questions/949314/how-to-retrieve-the-hash-for-the-current-commit-in-git
+export GIT_COMMIT=${GIT_COMMIT-$(git rev-parse --verify HEAD)}
+
 function stack_output() {
   # Used from https://stackoverflow.com/questions/41628487/getting-outputs-from-aws-cloudformation-describe-stacks
   local RES=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" --output text)
@@ -74,13 +77,22 @@ function create_stack() {
     verify_cli
     if ! stack_exists ; then
         echo "stack does not already exist.  Creating"
-        aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body ${STACK_FILE} --capabilities CAPABILITY_NAMED_IAM
+        aws cloudformation create-stack \
+            --stack-name ${STACK_NAME} \
+            --template-body ${STACK_FILE} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters ParameterKey=ImageTag,ParameterValue=${GIT_COMMIT}
         echo "Waiting for stack to finish creating"
         aws cloudformation wait stack-create-complete --stack-name ${STACK_NAME}
         echo "Things look good!"
     else
         echo "Stack already exists. Updating and pulling existing information.  If you get a 'No updates are to be performed' error, ignore it"
-        aws cloudformation update-stack --stack-name ${STACK_NAME} --template-body ${STACK_FILE} --capabilities CAPABILITY_NAMED_IAM 2> /tmp/err || true
+        aws cloudformation update-stack \
+            --stack-name ${STACK_NAME} \
+            --template-body ${STACK_FILE} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters ParameterKey=ImageTag,ParameterValue=${GIT_COMMIT}
+            2> /tmp/err || true
         cat /tmp/err
         if ! grep -q  'No updates' /tmp/err; then
             aws cloudformation wait stack-update-complete --stack-name ${STACK_NAME}

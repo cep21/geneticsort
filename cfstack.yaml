@@ -9,13 +9,18 @@ Outputs:
   ECRName:
     Value: !Ref ECRRepository
   ImageName:
-    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
   TableName:
     Value: !Ref DynamoTable2
   JobDefinition:
     Value: !Ref JobDefinition
   JobQueue:
     Value: !Ref JobQueue
+
+Parameters:
+  ImageTag:
+    Type: String
+    Description: Which container tag to run the job as
 
 Resources:
   VPC:
@@ -112,7 +117,7 @@ Resources:
     Properties:
       Type: container
       ContainerProperties:
-        Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}
+        Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
         Vcpus: 4
         Memory: 2000
         Environment:
