@@ -53,7 +53,7 @@ function run_job() {
         --job-queue $(stack_output JobQueue) \
         --job-definition $(stack_output JobDefinition) \
         --array-properties "size=${NUM_JOBS}" \
-        --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}]"
+        --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}}]"
 }
 
 function stack_exists() {
