@@ -51,7 +51,6 @@ func (l *LockedRand) Int63() int64 {
 	return l.G.Int63()
 }
 
-
 type Rand interface {
 	Intn(int) int
 	Int() int

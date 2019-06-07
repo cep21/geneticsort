@@ -132,10 +132,8 @@ func BenchmarkGeneticRegular(b *testing.B) {
 				Terminator: &genetic.CountingExecutor{
 					Limit: b.N,
 				},
-				Breeder: &genetic.SplitReproduce{},
-				Mutator: &genetic.LookAheadMutator{
-					MutationRatio: 10,
-				},
+				Breeder:         &genetic.SplitReproduce{},
+				Mutator:         &genetic.LookAheadMutator{},
 				NumberOfParents: 2,
 				PopulationSize:  run.popSize,
 				NumGoroutine:    runtime.NumCPU(),

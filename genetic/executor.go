@@ -51,13 +51,13 @@ func (c *MultiStopExecutor) StopExecution(p Population, r Rand) bool {
 var _ ExecutionTerminator = &MultiStopExecutor{}
 
 type NoImprovementExecutor struct {
-	Consecutive int
-	currentBest int
+	Consecutive        int
+	currentBest        int
 	currentConsecutive int
 }
 
 func (c *NoImprovementExecutor) String() string {
-	return fmt.Sprintf("consecutive-%s", c.Consecutive)
+	return fmt.Sprintf("consecutive-%d", c.Consecutive)
 }
 
 func (c *NoImprovementExecutor) StopExecution(p Population, _ Rand) bool {

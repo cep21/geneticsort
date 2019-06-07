@@ -67,7 +67,7 @@ func (a *LookAheadMutator) Mutate(in Individual, r Rand) Individual {
 }
 
 type PassThruDynamicMutation struct {
-	PassTo Mutator
+	PassTo               Mutator
 	MutationRatio        int
 	currentMutationRatio int
 }

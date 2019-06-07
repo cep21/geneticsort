@@ -55,8 +55,8 @@ function lint() {
 }
 
 function fix() {
-    find . -iname '*.go'-print0 | xargs -0 gofmt -s -w
-    find . -iname '*.go'-print0 | xargs -0 goimports -w
+    find . -iname '*.go' -print0 | xargs -0 gofmt -s -w
+    find . -iname '*.go' -print0 | xargs -0 goimports -w
 }
 
 function run_test() {
@@ -85,6 +85,10 @@ function create_stack() {
     fi
 }
 
+function go_build() {
+    go build ./...
+}
+
 function travis() {
     GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint
     go build ./...
@@ -95,6 +99,9 @@ function travis() {
 case "${1-}" in
   docker_push)
     docker_push
+    ;;
+  go_build)
+    go_build
     ;;
   create_stack)
     create_stack
@@ -119,7 +126,7 @@ case "${1-}" in
     ;;
   *)
     echo "Invalid param ${1-}"
-    echo "Valid: docker_push|create_stack|run_job|lint|fix|test|run|travis"
+    echo "Valid: go_build|docker_push|create_stack|run_job|lint|fix|test|run|travis"
     exit 1
     ;;
 esac

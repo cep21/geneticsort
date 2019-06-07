@@ -20,14 +20,14 @@ import (
 )
 
 type runConfig struct {
-	ArraySize      int
-	KTournament    int
-	Duration       time.Duration
-	MutationRation int
-	PopulationSize int
-	Seed           int
+	ArraySize        int
+	KTournament      int
+	Duration         time.Duration
+	MutationRation   int
+	PopulationSize   int
+	Seed             int
 	TerminationStall int
-	DynamoDBTable  string
+	DynamoDBTable    string
 }
 
 func load() runConfig {
@@ -102,8 +102,7 @@ func main() {
 		Breeder: &genetic.SplitReproduce{},
 		Mutator: &genetic.PassThruDynamicMutation{
 			MutationRatio: conf.MutationRation,
-			PassTo: &genetic.IndexMutation {
-			},
+			PassTo:        &genetic.IndexMutation{},
 		},
 		NumberOfParents: 2,
 		PopulationSize:  conf.PopulationSize,
