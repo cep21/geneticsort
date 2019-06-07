@@ -11,8 +11,7 @@ import (
 
 type Record struct {
 	Algorithm     genetic.Algorithm
-	BestCandidate genetic.Individual
-	//Config map[string]string
+	BestCandidate genetic.Chromosome
 }
 
 func mustWrite(_ int, err error) {

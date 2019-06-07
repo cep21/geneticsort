@@ -6,16 +6,16 @@ import (
 )
 
 type Population struct {
-	People   []Individual
-	isSorted bool
+	Individuals []Chromosome
+	isSorted    bool
 }
 
-func SpawnPopulation(n int, f IndividualFactory, r Rand) Population {
+func SpawnPopulation(n int, f ChromosomeFactory, r Rand) Population {
 	ret := Population{
-		People: make([]Individual, n),
+		Individuals: make([]Chromosome, n),
 	}
-	for i := range ret.People {
-		ret.People[i] = f.Spawn(r)
+	for i := range ret.Individuals {
+		ret.Individuals[i] = f.Spawn(r)
 	}
 	return ret
 }
@@ -24,27 +24,27 @@ func (p *Population) Sort() {
 	if p.isSorted {
 		return
 	}
-	sort.Slice(p.People, func(i, j int) bool {
-		return p.People[i].Fitness() < p.People[j].Fitness()
+	sort.Slice(p.Individuals, func(i, j int) bool {
+		return p.Individuals[i].Fitness() < p.Individuals[j].Fitness()
 	})
 	p.isSorted = true
 }
 
-func (p *Population) Min() Individual {
-	worst := p.People[0]
-	for i := 1; i < len(p.People); i++ {
-		if p.People[i].Fitness() < worst.Fitness() {
-			worst = p.People[i]
+func (p *Population) Min() Chromosome {
+	worst := p.Individuals[0]
+	for i := 1; i < len(p.Individuals); i++ {
+		if p.Individuals[i].Fitness() < worst.Fitness() {
+			worst = p.Individuals[i]
 		}
 	}
 	return worst
 }
 
-func (p *Population) Max() Individual {
-	best := p.People[0]
-	for i := 1; i < len(p.People); i++ {
-		if p.People[i].Fitness() > best.Fitness() {
-			best = p.People[i]
+func (p *Population) Max() Chromosome {
+	best := p.Individuals[0]
+	for i := 1; i < len(p.Individuals); i++ {
+		if p.Individuals[i].Fitness() > best.Fitness() {
+			best = p.Individuals[i]
 		}
 	}
 	return best
@@ -52,16 +52,16 @@ func (p *Population) Max() Individual {
 
 func (p *Population) Average() float64 {
 	sum := 0
-	for _, c := range p.People {
+	for _, c := range p.Individuals {
 		sum += c.Fitness()
 	}
-	return float64(sum) / float64(len(p.People))
+	return float64(sum) / float64(len(p.Individuals))
 }
 
 func (p *Population) calculateFitness(numGoroutine int) {
 	if numGoroutine < 2 {
-		for i := 0; i < len(p.People); i++ {
-			p.People[i].Fitness()
+		for i := 0; i < len(p.Individuals); i++ {
+			p.Individuals[i].Fitness()
 		}
 		return
 	}
@@ -72,31 +72,31 @@ func (p *Population) calculateFitness(numGoroutine int) {
 		go func() {
 			defer wg.Done()
 			for idx := range idxChan {
-				p.People[idx].Fitness()
+				p.Individuals[idx].Fitness()
 			}
 		}()
 	}
-	for i := 0; i < len(p.People); i++ {
+	for i := 0; i < len(p.Individuals); i++ {
 		idxChan <- i
 	}
 	close(idxChan)
 	wg.Wait()
 }
 
-func (p *Population) singleNextGenerationIteration(ps ParentSelector, b Breeder, m Mutator, numP int, rnd Rand) Individual {
-	parents := make([]Individual, numP)
+func (p *Population) singleNextGenerationIteration(ps ParentSelector, b Crossover, m Mutation, numP int, rnd Rand) Chromosome {
+	parents := make([]Chromosome, numP)
 	for j := 0; j < numP; j++ {
-		parents[j] = p.People[ps.PickParent(p.People, rnd)]
+		parents[j] = p.Individuals[ps.PickParent(p.Individuals, rnd)]
 	}
 	newChild := b.Reproduce(parents, rnd)
 	mutatedChild := m.Mutate(newChild, rnd)
 	return mutatedChild
 }
 
-func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, numP int, numGoroutine int, rnd RandForIndex) Population {
+func (p *Population) NextGeneration(ps ParentSelector, b Crossover, m Mutation, numP int, numGoroutine int, rnd RandForIndex) Population {
 	p.calculateFitness(numGoroutine)
 	ret := Population{
-		People: make([]Individual, len(p.People)),
+		Individuals: make([]Chromosome, len(p.Individuals)),
 	}
 	if numGoroutine < 2 {
 		numGoroutine = 1
@@ -108,15 +108,15 @@ func (p *Population) NextGeneration(ps ParentSelector, b Breeder, m Mutator, num
 		go func() {
 			defer wg.Done()
 			for idx := range idxChan {
-				ret.People[idx] = p.singleNextGenerationIteration(ps, b, m, numP, rnd.Rand(idx))
+				ret.Individuals[idx] = p.singleNextGenerationIteration(ps, b, m, numP, rnd.Rand(idx))
 			}
 		}()
 	}
-	for i := 0; i < len(p.People)-1; i++ {
+	for i := 0; i < len(p.Individuals)-1; i++ {
 		idxChan <- i
 	}
 	close(idxChan)
 	wg.Wait()
-	ret.People[len(ret.People)-1] = m.Mutate(p.Max(), rnd.Rand(0))
+	ret.Individuals[len(ret.Individuals)-1] = m.Mutate(p.Max(), rnd.Rand(0))
 	return ret
 }

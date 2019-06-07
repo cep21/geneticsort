@@ -49,7 +49,7 @@ func mustPrint(_ int, err error) {
 	}
 }
 
-var _ genetic.Individual = &arraySortingIndividual{}
+var _ genetic.Chromosome = &arraySortingIndividual{}
 var _ genetic.Array = &arraySortingIndividual{}
 
 func (c *arraySortingIndividual) String() string {
@@ -67,13 +67,13 @@ type ArraySortingFactory struct {
 	IndividualSize int
 }
 
-var _ genetic.IndividualFactory = &ArraySortingFactory{}
+var _ genetic.ChromosomeFactory = &ArraySortingFactory{}
 
 func (a *ArraySortingFactory) Family() string {
 	return fmt.Sprintf("intarray-sort-%d", a.IndividualSize)
 }
 
-func (a *ArraySortingFactory) Spawn(r genetic.Rand) genetic.Individual {
+func (a *ArraySortingFactory) Spawn(r genetic.Rand) genetic.Chromosome {
 	c := &arraySortingIndividual{
 		vals: make([]int, a.IndividualSize),
 	}
@@ -83,13 +83,13 @@ func (a *ArraySortingFactory) Spawn(r genetic.Rand) genetic.Individual {
 	return c
 }
 
-func (c *arraySortingIndividual) Shell() genetic.Individual {
+func (c *arraySortingIndividual) Shell() genetic.Chromosome {
 	return &arraySortingIndividual{
 		vals: make([]int, len(c.vals)),
 	}
 }
 
-func (c *arraySortingIndividual) Clone() genetic.Individual {
+func (c *arraySortingIndividual) Clone() genetic.Chromosome {
 	ret := &arraySortingIndividual{
 		vals: make([]int, len(c.vals)),
 	}

@@ -129,11 +129,11 @@ func BenchmarkGeneticRegular(b *testing.B) {
 				Factory: &ArraySortingFactory{
 					IndividualSize: run.arraySize,
 				},
-				Terminator: &genetic.CountingExecutor{
+				Terminator: &genetic.CountingTermination{
 					Limit: b.N,
 				},
-				Breeder:         &genetic.SplitReproduce{},
-				Mutator:         &genetic.LookAheadMutator{},
+				Breeder:         &genetic.OnePointCrossover{},
+				Mutator:         &genetic.LookAheadMutation{},
 				NumberOfParents: 2,
 				PopulationSize:  run.popSize,
 				NumGoroutine:    runtime.NumCPU(),

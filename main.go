@@ -93,17 +93,17 @@ func main() {
 			// - 1000 is 33454
 			IndividualSize: conf.ArraySize,
 		},
-		Terminator: &genetic.MultiStopExecutor{
-			Executors: []genetic.ExecutionTerminator{
-				&genetic.TimingExecutor{
+		Terminator: &genetic.MultiTermination{
+			Executors: []genetic.Termination{
+				&genetic.TimingTermination{
 					Duration: conf.Duration,
 				},
-				&genetic.NoImprovementExecutor{
+				&genetic.NoImprovementTermination{
 					Consecutive: conf.TerminationStall,
 				},
 			},
 		},
-		Breeder: &genetic.SplitReproduce{},
+		Breeder: &genetic.OnePointCrossover{},
 		Mutator: &genetic.PassThruDynamicMutation{
 			MutationRatio: conf.MutationRation,
 			PassTo:        &genetic.IndexMutation{},

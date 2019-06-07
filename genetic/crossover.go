@@ -2,19 +2,19 @@ package genetic
 
 import "fmt"
 
-type Breeder interface {
-	Reproduce(in []Individual, r Rand) Individual
+type Crossover interface {
+	Reproduce(in []Chromosome, r Rand) Chromosome
 	String() string
 }
 
-type SplitReproduce struct {
+type OnePointCrossover struct {
 }
 
-func (s *SplitReproduce) String() string {
+func (s *OnePointCrossover) String() string {
 	return fmt.Sprintf("split")
 }
 
-func (s *SplitReproduce) Reproduce(in []Individual, r Rand) Individual {
+func (s *OnePointCrossover) Reproduce(in []Chromosome, r Rand) Chromosome {
 	if len(in) == 0 {
 		return nil
 	}
@@ -41,4 +41,4 @@ func (s *SplitReproduce) Reproduce(in []Individual, r Rand) Individual {
 	return ret
 }
 
-var _ Breeder = &SplitReproduce{}
+var _ Crossover = &OnePointCrossover{}

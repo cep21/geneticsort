@@ -2,8 +2,8 @@ package genetic
 
 import "fmt"
 
-type Mutator interface {
-	Mutate(in Individual, r Rand) Individual
+type Mutation interface {
+	Mutate(in Chromosome, r Rand) Chromosome
 	String() string
 }
 
@@ -14,7 +14,7 @@ func (a *SwapMutator) String() string {
 	return fmt.Sprintf("swap")
 }
 
-func (a *SwapMutator) Mutate(in Individual, r Rand) Individual {
+func (a *SwapMutator) Mutate(in Chromosome, r Rand) Chromosome {
 	asSwap, ok := in.(Array)
 	if !ok {
 		panic("Trying to do swap mutation with something that isn't swappable")
@@ -31,21 +31,21 @@ func (a *SwapMutator) Mutate(in Individual, r Rand) Individual {
 }
 
 type DynamicMutation interface {
-	Mutator
+	Mutation
 	IncreaseMutationRate(r Rand)
 	ResetMutationRate(r Rand)
 }
 
-var _ Mutator = &SwapMutator{}
+var _ Mutation = &SwapMutator{}
 
-type LookAheadMutator struct {
+type LookAheadMutation struct {
 }
 
-func (a *LookAheadMutator) String() string {
+func (a *LookAheadMutation) String() string {
 	return "lookahead"
 }
 
-func (a *LookAheadMutator) Mutate(in Individual, r Rand) Individual {
+func (a *LookAheadMutation) Mutate(in Chromosome, r Rand) Chromosome {
 	asSwap, ok := in.(Array)
 	if !ok {
 		panic("Trying to do swap mutation with something that isn't swappable")
@@ -67,12 +67,12 @@ func (a *LookAheadMutator) Mutate(in Individual, r Rand) Individual {
 }
 
 type PassThruDynamicMutation struct {
-	PassTo               Mutator
+	PassTo               Mutation
 	MutationRatio        int
 	currentMutationRatio int
 }
 
-func (p *PassThruDynamicMutation) Mutate(in Individual, r Rand) Individual {
+func (p *PassThruDynamicMutation) Mutate(in Chromosome, r Rand) Chromosome {
 	if r.Intn(p.currentMutationRatio) != 0 {
 		return in
 	}
@@ -97,7 +97,7 @@ func (p *PassThruDynamicMutation) ResetMutationRate(r Rand) {
 type IndexMutation struct {
 }
 
-func (i *IndexMutation) Mutate(in Individual, r Rand) Individual {
+func (i *IndexMutation) Mutate(in Chromosome, r Rand) Chromosome {
 	ret := in.Clone()
 	asArray := ret.(Array)
 	asArray.Randomize(r.Intn(asArray.Len()), r)
@@ -108,7 +108,7 @@ func (i *IndexMutation) String() string {
 	return "index-mutation"
 }
 
-var _ Mutator = &LookAheadMutator{}
-var _ Mutator = &LookAheadMutator{}
-var _ Mutator = &IndexMutation{}
+var _ Mutation = &LookAheadMutation{}
+var _ Mutation = &LookAheadMutation{}
+var _ Mutation = &IndexMutation{}
 var _ DynamicMutation = &PassThruDynamicMutation{}

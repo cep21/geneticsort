@@ -1,14 +1,14 @@
 package genetic
 
-type Individual interface {
+type Chromosome interface {
 	Fitness() int
-	Clone() Individual
-	Shell() Individual
+	Clone() Chromosome
+	Shell() Chromosome
 	String() string
 }
 
 type LocalOptimization interface {
-	LocallyOptimize() Individual
+	LocallyOptimize() Chromosome
 }
 
 type Simplifyable interface {
@@ -16,14 +16,14 @@ type Simplifyable interface {
 }
 
 type Array interface {
-	Individual
+	Chromosome
 	Swap(i, j int)
 	Copy(from Array, start int, end int, into int)
 	Randomize(int, Rand)
 	Len() int
 }
 
-type IndividualFactory interface {
-	Spawn(G Rand) Individual
+type ChromosomeFactory interface {
+	Spawn(G Rand) Chromosome
 	Family() string
 }

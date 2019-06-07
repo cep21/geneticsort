@@ -6,7 +6,7 @@ import (
 )
 
 type ParentSelector interface {
-	PickParent([]Individual, Rand) int
+	PickParent([]Chromosome, Rand) int
 	String() string
 }
 
@@ -18,7 +18,7 @@ func (s TournamentParentSelector) String() string {
 	return fmt.Sprintf("K-Tournament-%d", s.K)
 }
 
-func (s TournamentParentSelector) PickParent(c []Individual, r Rand) int {
+func (s TournamentParentSelector) PickParent(c []Chromosome, r Rand) int {
 	k := s.K
 	if k == 0 {
 		k = int(math.Log(float64(len(c))) + 1)

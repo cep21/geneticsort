@@ -6,16 +6,16 @@ type Algorithm struct {
 	Log             *log.Logger
 	RandForIndex    RandForIndex
 	ParentSelector  ParentSelector
-	Factory         IndividualFactory
-	Terminator      ExecutionTerminator
-	Breeder         Breeder
-	Mutator         Mutator
+	Factory         ChromosomeFactory
+	Terminator      Termination
+	Breeder         Crossover
+	Mutator         Mutation
 	NumberOfParents int
 	PopulationSize  int
 	NumGoroutine    int
 }
 
-func (a *Algorithm) Run() Individual {
+func (a *Algorithm) Run() Chromosome {
 	currentPopulation := SpawnPopulation(a.PopulationSize, a.Factory, a.RandForIndex.Rand(0))
 	best := currentPopulation.Max()
 	asDynamic, isDynamic := a.Mutator.(DynamicMutation)

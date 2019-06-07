@@ -6,21 +6,21 @@ import (
 	"time"
 )
 
-type ExecutionTerminator interface {
+type Termination interface {
 	StopExecution(p Population, r Rand) bool
 	String() string
 }
 
-type CountingExecutor struct {
+type CountingTermination struct {
 	Limit int
 	i     int
 }
 
-func (c *CountingExecutor) String() string {
+func (c *CountingTermination) String() string {
 	return fmt.Sprintf("counting-%d", c.Limit)
 }
 
-func (c *CountingExecutor) StopExecution(p Population, _ Rand) bool {
+func (c *CountingTermination) StopExecution(p Population, _ Rand) bool {
 	if c.i >= c.Limit {
 		return true
 	}
@@ -28,11 +28,11 @@ func (c *CountingExecutor) StopExecution(p Population, _ Rand) bool {
 	return false
 }
 
-type MultiStopExecutor struct {
-	Executors []ExecutionTerminator
+type MultiTermination struct {
+	Executors []Termination
 }
 
-func (c *MultiStopExecutor) String() string {
+func (c *MultiTermination) String() string {
 	parts := make([]string, 0, len(c.Executors))
 	for _, e := range c.Executors {
 		parts = append(parts, e.String())
@@ -40,7 +40,7 @@ func (c *MultiStopExecutor) String() string {
 	return fmt.Sprintf("multi-%s", strings.Join(parts, ","))
 }
 
-func (c *MultiStopExecutor) StopExecution(p Population, r Rand) bool {
+func (c *MultiTermination) StopExecution(p Population, r Rand) bool {
 	shouldStop := false
 	for _, e := range c.Executors {
 		shouldStop = shouldStop || e.StopExecution(p, r)
@@ -48,19 +48,19 @@ func (c *MultiStopExecutor) StopExecution(p Population, r Rand) bool {
 	return shouldStop
 }
 
-var _ ExecutionTerminator = &MultiStopExecutor{}
+var _ Termination = &MultiTermination{}
 
-type NoImprovementExecutor struct {
+type NoImprovementTermination struct {
 	Consecutive        int
 	currentBest        int
 	currentConsecutive int
 }
 
-func (c *NoImprovementExecutor) String() string {
+func (c *NoImprovementTermination) String() string {
 	return fmt.Sprintf("consecutive-%d", c.Consecutive)
 }
 
-func (c *NoImprovementExecutor) StopExecution(p Population, _ Rand) bool {
+func (c *NoImprovementTermination) StopExecution(p Population, _ Rand) bool {
 	best := p.Max().Fitness()
 	if best > c.currentBest {
 		c.currentBest = best
@@ -74,28 +74,28 @@ func (c *NoImprovementExecutor) StopExecution(p Population, _ Rand) bool {
 	return false
 }
 
-var _ ExecutionTerminator = &NoImprovementExecutor{}
+var _ Termination = &NoImprovementTermination{}
 
-var _ ExecutionTerminator = &CountingExecutor{}
+var _ Termination = &CountingTermination{}
 
-type TimingExecutor struct {
+type TimingTermination struct {
 	Duration  time.Duration
 	startTime time.Time
 	Now       func() time.Time
 }
 
-func (c *TimingExecutor) String() string {
+func (c *TimingTermination) String() string {
 	return fmt.Sprintf("timing-%s", c.Duration.String())
 }
 
-func (c *TimingExecutor) now() time.Time {
+func (c *TimingTermination) now() time.Time {
 	if c.Now == nil {
 		return time.Now()
 	}
 	return c.Now()
 }
 
-func (c *TimingExecutor) StopExecution(p Population, _ Rand) bool {
+func (c *TimingTermination) StopExecution(p Population, _ Rand) bool {
 	if c.startTime.IsZero() {
 		c.startTime = c.now()
 	}
@@ -103,4 +103,4 @@ func (c *TimingExecutor) StopExecution(p Population, _ Rand) bool {
 	return curTime.Sub(c.startTime) > c.Duration
 }
 
-var _ ExecutionTerminator = &TimingExecutor{}
+var _ Termination = &TimingTermination{}
