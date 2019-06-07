@@ -13,10 +13,5 @@ cache:
   directories:
     - $GOPATH/pkg/mod
 
-install:
-  - make setup_ci
-
 script:
-  - make build
-  - make test
-  - go mod vendor && GO111MODULE=off PATH=$TRAVIS_BUILD_DIR/bin:$PATH make lint
+  - ./make.sh travis

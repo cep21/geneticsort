@@ -13,6 +13,10 @@ type arraySortingIndividual struct {
 	fitness *int
 }
 
+func (c *arraySortingIndividual) Randomize(idx int, r genetic.Rand) {
+	c.vals[idx] = r.Int()
+}
+
 func (c *arraySortingIndividual) Copy(from genetic.Array, start int, end int, into int) {
 	asS := from.(*arraySortingIndividual)
 	copy(c.vals[into:], asS.vals[start:end])

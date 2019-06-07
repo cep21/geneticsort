@@ -12,6 +12,10 @@ Outputs:
     Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}
   TableName:
     Value: !Ref DynamoTable2
+  JobDefinition:
+    Value: !Ref JobDefinition
+  JobQueue:
+    Value: !Ref JobQueue
 
 Resources:
   VPC:
@@ -83,6 +87,14 @@ Resources:
   EcsInstanceRole:
     Type: AWS::IAM::Role
     Properties:
+      Policies:
+        - PolicyName: dynamo-put-results
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ["dynamodb:PutItem"]
+                Resource: !GetAtt [DynamoTable2, Arn]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
       AssumeRolePolicyDocument:
@@ -103,6 +115,11 @@ Resources:
         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}
         Vcpus: 2
         Memory: 2000
+        Environment:
+          - Name: DYNAMODB_TABLE
+            Value: !Ref DynamoTable2
+          - Name: AWS_REGION
+            Value: !Sub ${AWS::Region}
 
   JobQueue:
     Type: AWS::Batch::JobQueue

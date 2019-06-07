@@ -26,6 +26,7 @@ type runConfig struct {
 	MutationRation int
 	PopulationSize int
 	Seed           int
+	TerminationStall int
 	DynamoDBTable  string
 }
 
@@ -35,7 +36,11 @@ func load() runConfig {
 	ret.KTournament = mustOsInt("K_TOURNAMENT", 3)
 	ret.MutationRation = mustOsInt("MUTATION_RATION", 30)
 	ret.PopulationSize = mustOsInt("POPULATION_SIZE", 1000)
+	ret.TerminationStall = mustOsInt("TERMINATE_ON_STALL", 50)
 	ret.Seed = mustOsInt("RAND_SEED", 0)
+	if ret.Seed < 0 {
+		ret.Seed = time.Now().Nanosecond()
+	}
 	ret.Duration = mustOsDur("RUN_TIME", time.Minute)
 	ret.DynamoDBTable = os.Getenv("DYNAMODB_TABLE")
 	return ret
@@ -84,12 +89,21 @@ func main() {
 			// - 1000 is 33454
 			IndividualSize: conf.ArraySize,
 		},
-		Terminator: &genetic.TimingExecutor{
-			Duration: conf.Duration,
+		Terminator: &genetic.MultiStopExecutor{
+			Executors: []genetic.ExecutionTerminator{
+				&genetic.TimingExecutor{
+					Duration: conf.Duration,
+				},
+				&genetic.NoImprovementExecutor{
+					Consecutive: conf.TerminationStall,
+				},
+			},
 		},
 		Breeder: &genetic.SplitReproduce{},
-		Mutator: &genetic.LookAheadMutator{
+		Mutator: &genetic.PassThruDynamicMutation{
 			MutationRatio: conf.MutationRation,
+			PassTo: &genetic.IndexMutation {
+			},
 		},
 		NumberOfParents: 2,
 		PopulationSize:  conf.PopulationSize,
