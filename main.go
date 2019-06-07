@@ -79,7 +79,7 @@ func mustOsDur(s string, defaultVal time.Duration) time.Duration {
 func main() {
 	conf := load()
 	a := genetic.Algorithm{
-		RandForIndex: genetic.ArrayRandForIdx(conf.PopulationSize, int64(conf.Seed), func(seed int64) genetic.Rand {
+		RandForIndex: genetic.ArrayRandForIdx(conf.PopulationSize, conf.Seed, func(seed int64) genetic.Rand {
 			return rand.New(rand.NewSource(seed))
 		}),
 		Log: log.New(os.Stdout, "", log.LstdFlags),
