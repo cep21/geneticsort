@@ -45,11 +45,15 @@ function docker_push() {
     docker push $(stack_output ImageName)
 }
 
+export NUM_JOBS=${NUM_JOBS-2}
+export JOB_RUN_TIME=${JOB_RUN_TIME-1m}
+
 function run_job() {
     aws batch submit-job --job-name geneticsort \
         --job-queue $(stack_output JobQueue) \
         --job-definition $(stack_output JobDefinition) \
-        --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=1h}]"
+        --array-properties "size=${NUM_JOBS}"
+        --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}]"
 }
 
 function stack_exists() {

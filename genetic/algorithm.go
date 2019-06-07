@@ -22,10 +22,12 @@ func (a *Algorithm) Run() Individual {
 	if isDynamic {
 		asDynamic.ResetMutationRate(a.RandForIndex.Rand(0))
 	}
+	runCounter := 0
 	for {
 		if a.Log != nil {
-			a.Log.Println("Currently at mean/max", currentPopulation.Average(), currentPopulation.Max().Fitness())
+			a.Log.Println("Index/mean/max", runCounter, currentPopulation.Average(), currentPopulation.Max().Fitness())
 		}
+		runCounter++
 		if a.Terminator.StopExecution(currentPopulation, a.RandForIndex.Rand(0)) {
 			if asSimpl, canSimpl := best.(Simplifyable); canSimpl {
 				asSimpl.Simplify()
