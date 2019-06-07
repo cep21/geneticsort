@@ -25,7 +25,7 @@ type runConfig struct {
 	Duration         time.Duration
 	MutationRation   int
 	PopulationSize   int
-	Seed             int
+	Seed             int64
 	TerminationStall int
 	DynamoDBTable    string
 }
@@ -37,22 +37,26 @@ func load() runConfig {
 	ret.MutationRation = mustOsInt("MUTATION_RATION", 30)
 	ret.PopulationSize = mustOsInt("POPULATION_SIZE", 1000)
 	ret.TerminationStall = mustOsInt("TERMINATE_ON_STALL", 50)
-	ret.Seed = mustOsInt("RAND_SEED", 0)
+	ret.Seed = mustOsInt64("RAND_SEED", 0)
 	if ret.Seed < 0 {
-		ret.Seed = time.Now().Nanosecond()
+		ret.Seed = time.Now().UnixNano()
 	}
 	ret.Duration = mustOsDur("RUN_TIME", time.Minute)
 	ret.DynamoDBTable = os.Getenv("DYNAMODB_TABLE")
 	return ret
 }
 
-// must_ie return i or panics if err.  the "ie" stands for "int/error"
 func mustOsInt(s string, defaultVal int) int {
+	return int(mustOsInt64(s, int64(defaultVal)))
+}
+
+// must_ie return i or panics if err.  the "ie" stands for "int/error"
+func mustOsInt64(s string, defaultVal int64) int64 {
 	a := os.Getenv(s)
 	if a == "" {
 		return defaultVal
 	}
-	ret, err := strconv.Atoi(a)
+	ret, err := strconv.ParseInt(a, 10, 64)
 	if err != nil {
 		panic(err)
 	}

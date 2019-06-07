@@ -69,7 +69,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -98,7 +98,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -113,7 +113,7 @@ Resources:
       Type: container
       ContainerProperties:
         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}
-        Vcpus: 2
+        Vcpus: 4
         Memory: 2000
         Environment:
           - Name: DYNAMODB_TABLE

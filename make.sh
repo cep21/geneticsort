@@ -43,7 +43,10 @@ function docker_push() {
 }
 
 function run_job() {
-    aws batch submit-job --job-name geneticsort --job-queue $(stack_output JobQueue) --job-definition $(stack_output JobDefinition)
+    aws batch submit-job --job-name geneticsort \
+        --job-queue $(stack_output JobQueue) \
+        --job-definition $(stack_output JobDefinition) \
+        --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=1h}]"
 }
 
 function stack_exists() {
@@ -96,6 +99,24 @@ function travis() {
     lint
 }
 
+function is_git_commit_needed {
+  [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]]
+}
+
+
+function everything() {
+    if is_git_commit_needed; then
+        echo "Please run git-commit before you run everything"
+        exit 1
+    fi
+    go_build
+    run_test
+    lint
+    create_stack
+    docker_push
+    run_job
+}
+
 case "${1-}" in
   docker_push)
     docker_push
@@ -124,9 +145,12 @@ case "${1-}" in
   travis)
     travis
     ;;
+  everything)
+    everything
+    ;;
   *)
     echo "Invalid param ${1-}"
-    echo "Valid: go_build|docker_push|create_stack|run_job|lint|fix|test|run|travis"
+    echo "Valid: go_build|docker_push|create_stack|run_job|lint|fix|test|run|travis|everything"
     exit 1
     ;;
 esac
