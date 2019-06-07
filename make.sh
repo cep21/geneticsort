@@ -29,7 +29,7 @@ function get_aws_region() {
 }
 
 function verify_cli() {
-    echo "Verifying cli works ..."
+    echo "Verifying aws cli works ..."
     if ! cli_works ; then
         echo "Unable to execute get-caller-identity"
         echo "Are you sure you setup your cli correctly?"
@@ -52,7 +52,7 @@ function run_job() {
     aws batch submit-job --job-name geneticsort \
         --job-queue $(stack_output JobQueue) \
         --job-definition $(stack_output JobDefinition) \
-        --array-properties "size=${NUM_JOBS}"
+        --array-properties "size=${NUM_JOBS}" \
         --container-overrides "environment=[{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}]"
 }
 
