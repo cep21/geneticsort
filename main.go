@@ -104,6 +104,11 @@ func main() {
 			},
 		},
 		Crossover: &genetic.OnePointCrossover{},
+		SurvivorSelection: &genetic.ParentSurvivorSelection{
+			ParentSelector: &genetic.TournamentParentSelector{
+				K: conf.KTournament,
+			},
+		},
 		Mutator: &genetic.PassThruDynamicMutation{
 			MutationRatio: conf.MutationRation,
 			PassTo:        &genetic.IndexMutation{},
