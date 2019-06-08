@@ -132,7 +132,7 @@ func BenchmarkGeneticRegular(b *testing.B) {
 				Terminator: &genetic.CountingTermination{
 					Limit: b.N,
 				},
-				Breeder:         &genetic.OnePointCrossover{},
+				Crossover:       &genetic.OnePointCrossover{},
 				Mutator:         &genetic.LookAheadMutation{},
 				NumberOfParents: 2,
 				PopulationSize:  run.popSize,

@@ -41,8 +41,11 @@ func (d *Recorder) Record(ctx context.Context, r record.Record) error {
 			"terminator": {
 				S: aws.String(r.Algorithm.Terminator.String()),
 			},
-			"breeder": {
-				S: aws.String(r.Algorithm.Breeder.String()),
+			"crossover": {
+				S: aws.String(r.Algorithm.Crossover.String()),
+			},
+			"survivor_selection": {
+				S: aws.String(r.Algorithm.SurvivorSelection.String()),
 			},
 			"population_size": {
 				N: aws.String(strconv.Itoa(r.Algorithm.PopulationSize)),

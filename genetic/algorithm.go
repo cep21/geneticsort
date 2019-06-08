@@ -3,16 +3,17 @@ package genetic
 import "log"
 
 type Algorithm struct {
-	Log             *log.Logger
-	RandForIndex    RandForIndex
-	ParentSelector  ParentSelector
-	Factory         ChromosomeFactory
-	Terminator      Termination
-	Breeder         Crossover
-	Mutator         Mutation
-	NumberOfParents int
-	PopulationSize  int
-	NumGoroutine    int
+	Log               *log.Logger
+	RandForIndex      RandForIndex
+	ParentSelector    ParentSelector
+	Factory           ChromosomeFactory
+	Terminator        Termination
+	Crossover         Crossover
+	SurvivorSelection SurvivorSelection
+	Mutator           Mutation
+	NumberOfParents   int
+	PopulationSize    int
+	NumGoroutine      int
 }
 
 func (a *Algorithm) Run() Chromosome {
@@ -34,7 +35,8 @@ func (a *Algorithm) Run() Chromosome {
 			}
 			return best
 		}
-		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Breeder, a.Mutator, a.NumberOfParents, a.NumGoroutine, a.RandForIndex)
+		nextPopulation := currentPopulation.NextGeneration(a.ParentSelector, a.Crossover, a.Mutator, a.NumberOfParents, a.NumGoroutine, a.RandForIndex)
+		nextPopulation = a.SurvivorSelection.NextGeneration(&currentPopulation, &nextPopulation, a.RandForIndex.Rand(0))
 		nextBest := nextPopulation.Max()
 		if best.Fitness() < nextBest.Fitness() {
 			best = nextPopulation.Max()

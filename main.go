@@ -103,7 +103,7 @@ func main() {
 				},
 			},
 		},
-		Breeder: &genetic.OnePointCrossover{},
+		Crossover: &genetic.OnePointCrossover{},
 		Mutator: &genetic.PassThruDynamicMutation{
 			MutationRatio: conf.MutationRation,
 			PassTo:        &genetic.IndexMutation{},
