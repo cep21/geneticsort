@@ -303,10 +303,10 @@ An overly simplistic summary of the resources we're creating in our stack are
 * [AWS::EC2::Subnet](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html): A [HA](https://en.wikipedia.org/wiki/High_availability) [section](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) of our network
 * [AWS::EC2::InternetGateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html): A portal to the internet (like the closet in [Narnia](https://en.wikipedia.org/wiki/The_Chronicles_of_Narnia:_The_Lion,_the_Witch_and_the_Wardrobe))
 * [AWS::EC2::VPCGatewayAttachment](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html): Puts the Narnia closet in our house.
-* [AWS::EC2::SecurityGroup](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html): A [firewall](https://en.wikipedia.org/wiki/Firewall_(computing).
-* [AWS::EC2::Route]()
-* [AWS::EC2::RouteTable](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html):
-
+* [AWS::EC2::RouteTable](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html): Network traffic rule set
+* [AWS::EC2::Route](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html): A rule in the above route table
+* [AWS::EC2::SubnetRouteTableAssociation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html): Glue the route table to the subnet
+* [AWS::EC2::SecurityGroup](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html): A [firewall](https://en.wikipedia.org/wiki/Firewall_(computing). 
 
 ### Place to put our genetic algorithm
 
@@ -319,3 +319,68 @@ is very basic.
 ```
 
 ### Place to run our genetic algorithm
+
+AWS batch can [manage](https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html#managed_compute_environments)
+scaling the compute environment for us, which are scaled according to virtual CPU units (vCPU).
+Each vCPU is a [thread in a CPU core](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html#instance-cpu-options-rules)
+and N of these should let us run N concurrent threads of logic.  We ideally shouldn't care if we get one beefy computer
+running 64 concurrent threads, or 8 medium size computers running 8 concurrent threads.
+
+Another important part is setting [MinvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-minvcpus) and
+[DesiredvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-desiredvcpus)
+to 0.  This lets our environment shut itself down ($$$) when we're not using it.
+
+```yaml
+  ComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ComputeResources:
+        Type: EC2
+        MinvCpus: 0
+        DesiredvCpus: 0
+        MaxvCpus: 64
+        InstanceTypes:
+          - optimal
+        Subnets:
+          - !Ref Subnet
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        InstanceRole: !Ref IamInstanceProfile
+      ServiceRole: !Ref BatchServiceRole
+```
+
+### Place to store results of our genetic algorithm
+
+If you're using AWS and need an easy place to store data, [DynamoDB](https://aws.amazon.com/dynamodb/)
+is the best answer.  It has very little operational overhead, charges proportional to use, and scales
+very well.
+
+The only questions to answer is how we store our results. (insert something about dynamodbd)
+
+```yaml
+  DynamoTable2:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    Properties:
+      GlobalSecondaryIndexes:
+        - IndexName: by_fitness
+          KeySchema:
+            - AttributeName: family
+              KeyType: HASH
+            - AttributeName: fitness
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: key
+          AttributeType: S
+        - AttributeName: family
+          AttributeType: S
+        - AttributeName: fitness
+          AttributeType: N
+      KeySchema:
+        - AttributeName: key
+          KeyType: HASH
+```

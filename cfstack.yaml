@@ -28,13 +28,15 @@ Resources:
     Properties:
       CidrBlock: 10.0.0.0/16
 
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: "10.0.0.0/24"
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: "True"
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-
-  RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -42,18 +44,10 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  RouteTable:
+    Type: AWS::EC2::RouteTable
     Properties:
-      GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
       VpcId: !Ref VPC
-
-  Subnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      CidrBlock: "10.0.0.0/24"
-      VpcId: !Ref VPC
-      MapPublicIpOnLaunch: "True"
 
   Route:
     Type: AWS::EC2::Route
@@ -67,6 +61,12 @@ Resources:
     Properties:
       RouteTableId: !Ref RouteTable
       SubnetId: !Ref Subnet
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
+      VpcId: !Ref VPC
 
   BatchServiceRole:
     Type: AWS::IAM::Role
