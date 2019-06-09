@@ -196,10 +196,126 @@ set while picking parents and making children for the next generation.
 	wg.Wait()
 ```
 
-## Rand in parallel algorithms
+## Randomness in parallel algorithms
 
-## Creating a Docker container of your Go program
+Genetic algorithms require random number generation.  This can cause problems when running in parallel
+because random number generators are almost never thread safe.  Thread safety is forced onto them with locks or
+[mutexes](mutexes-wikipedia).
+
+If you use Go's built in [rand](rand) package's random number generators you'll notice they use a `globalRand`
+singleton.
+
+```go
+func Int31() int32 { return globalRand.Int31() }
+```
+
+This global rand singleton is built with a `lockedSource` implementation.
+
+```go
+var globalRand = New(&lockedSource{src: NewSource(1).(Source64)})
+```
+
+The locked source protects randomness with a mutex
+```go
+type lockedSource struct {
+	lk  sync.Mutex
+	src Source64
+}
+
+func (r *lockedSource) Int63() (n int64) {
+	r.lk.Lock()
+	n = r.src.Int63()
+	r.lk.Unlock()
+	return
+}
+```
+
+In mostly numeric applications this [mutex contention](mutex-contention-link) can cause real delays in processing.
+Ideally we would be able to not require locking when we need random number generation.  We can achieve this by using
+a different random number generator for each `index` of a member of our population, or one for each goroutine we want
+to run in parallel.
+
+```go
+
+type arrayRandForIdx struct {
+	rands []Rand
+}
+
+func (a *arrayRandForIdx) Rand(idx int) Rand {
+	return a.rands[idx]
+}
+```
+
+Rather than relying on the global random number generator, we can [inject](injection-link) the Random generator
+into our functions that need randomness, like mutation.
+
+```go
+type Mutation interface {
+	Mutate(in Chromosome, r Rand) Chromosome
+}
+```
+
+This allows us to use lockless random numbers.
 
 # Deploying and running a genetic algorithm at a large scale using AWS Batch and ECS
 
-The last 
+After making a self contained Go program that executes our genetic algorithm, we need a convenient
+and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.com/batch/) makes this [easy](https://www.youtube.com/watch?v=T4aAWrGHmxQ).
+
+## Creating a Docker container of your Go program
+
+The first part of batch is turning our Go program into a docker container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
+than it should be, but there exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.  Here are a few that give
+good advice: feel free to copy from any of this
+* [Create the smallest and secured golang docker image based on scratch](https://medium.com/@chemidy/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324)
+* [How to Dockerize your Go (golang) App](https://medium.com/travis-on-docker/how-to-dockerize-your-go-golang-app-542af15c27a2) 
+
+## Managing infrastructure with cloudformation
+
+[Infrastructure as code](https://en.wikipedia.org/wiki/Infrastructure_as_code) (IaC) has rapidly become a best
+practice in the emergent era of cloud computing.  Your machine learning setup should maintain these best practices to
+make iteration and consistency of your system as predictable as possible.  The two most common ways to manage IaC for
+AWS are [cloudformation](https://aws.amazon.com/cloudformation/) and [terraform](https://www.terraform.io/).  They are both
+great solutions: for this project I picked cloudformation.
+
+The basic AWS components we will need are:
+* Networking glue that lets computers talk to things
+* Place to put our genetic algorithm
+* Place to run our genetic algorithm
+* Place to store results of our genetic algorithm
+* Configuration for Batch that tells it what to run and how to run it
+
+For this setup, I used a lot of configuration from [AWS's help blog about Batch](https://aws.amazon.com/blogs/compute/using-aws-cloudformation-to-create-and-manage-aws-batch-resources/) template [here](https://s3-us-east-2.amazonaws.com/cloudformation-templates-us-east-2/Managed_EC2_Batch_Environment.template).
+
+### Networking glue that lets computers talk to things
+
+AWS's networking options are very deep and way outside the scope of this post.  It's very much worth learning
+if you plan to manage highly available resources on AWS, but for us we'll just copy/paste the networking stuff from somewhere,
+like the blog above, and move on with our lives.  If you're really interested, here are some good introductory articles:
+
+* [AWS Networking for Developers](https://aws.amazon.com/blogs/apn/aws-networking-for-developers/)
+* [Amazon VPC for On-Premises Network Engineers](https://aws.amazon.com/blogs/apn/amazon-vpc-for-on-premises-network-engineers-part-one/)
+* [What is Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
+
+An overly simplistic summary of the resources we're creating in our stack are
+
+* [AWS::EC2::VPC](https://aws.amazon.com/vpc/): A network
+* [AWS::EC2::Subnet](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html): A [HA](https://en.wikipedia.org/wiki/High_availability) [section](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) of our network
+* [AWS::EC2::InternetGateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html): A portal to the internet (like the closet in [Narnia](https://en.wikipedia.org/wiki/The_Chronicles_of_Narnia:_The_Lion,_the_Witch_and_the_Wardrobe))
+* [AWS::EC2::VPCGatewayAttachment](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-vpc-gateway-attachment.html): Puts the Narnia closet in our house.
+* [AWS::EC2::SecurityGroup](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html): A [firewall](https://en.wikipedia.org/wiki/Firewall_(computing).
+* [AWS::EC2::Route]()
+* [AWS::EC2::RouteTable](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html):
+
+
+### Place to put our genetic algorithm
+
+[ECR](https://aws.amazon.com/ecr/) is an AWS managed place to store Docker containers and the configuration for it
+is very basic.
+
+```yaml
+  ECRRepository:
+    Type: AWS::ECR::Repository
+```
+
+### Place to run our genetic algorithm

@@ -1,6 +1,8 @@
 package genetic
 
-import "log"
+import (
+	"log"
+)
 
 type Algorithm struct {
 	Log               *log.Logger
