@@ -1,8 +1,8 @@
-# Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch and Docker
+# Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
 
 This post will give a walk thru of the following concepts:
 * What are genetic algorithms
-* Applying genetic algorithms to sorting inputs
+* Applying genetic algorithms to black box inputs, with sorting as an example
 * Architecting a genetic algorithm in Go
 * Deploying and running a genetic algorithm at a large scale using AWS Batch and ECS
 
@@ -15,11 +15,11 @@ custom, large scale genetic algorithms using AWS and Go.
 There exist really good resources online already that describe in detail how genetic algorithms work.  The two I've
 found most useful are [tutorial point](https://www.tutorialspoint.com/genetic_algorithms/index.htm) and
 [wikipedia](https://en.wikipedia.org/wiki/Genetic_algorithm).  My summary here is only the bare bones of genetic
-algorithms since the original parts are everything else.
+algorithms, since the original parts of the post are focused on how to code and deploy them.
 
 ## Basics of genetic algorithms
 
-You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm).
+You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm)).
 
 --- Put picture 
 
@@ -35,8 +35,9 @@ that tells you how good a solution is.
 --- Picture describing each above problem and how good or bad it was.
 
 Now make baby solutions!  To start, find two parent solutions.  How you pick your parent solutions is called
-[parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm). Just like natural selection, you want to bias 
-to picking good solutions.  You could imagine combining the DNA of 3 or more parents, but for this example I just pick two.
+[parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm).
+Just like natural selection, you want to bias to picking fitter parents.  You could imagine combining the DNA of 3
+or more parents, but for this example I just pick two.
 
 --- Picture of two of the solutions.
 
@@ -45,7 +46,7 @@ Your child solution should be some combination of the parents.  There are [lots]
 
 --- Picture of a combination solution
 
-Finally you want to [mutate](https://en.wikipedia.org/wiki/Mutation_(genetic_algorithm) your solution.  Mutation lets you
+Finally you want to [mutate](https://en.wikipedia.org/wiki/Mutation_(genetic_algorithm)) your solution.  Mutation lets you
 stumble upon great solutions.  Just like for animals, mutation should be rare and may not even happen for all children.
 
 --- Picture of mutation
@@ -56,7 +57,7 @@ Repeat this process a bunch of times until you have a new population.
 
 The number of solutions to your problem has now grown.  You need to kill off solutions to keep your population in check.
 How you do this is called [survivor selection](https://en.wikipedia.org/wiki/Selection_(genetic_algorithm).  Maybe you
-kill off the older solutions, maybe you make the solutions fight to the death with each other.  Really your call.
+kill off the older solutions or make the solutions fight to the death with each other.
 
 --- Picture of survived solutions
 
@@ -72,13 +73,12 @@ and machine learning is way deeper than few paragraphs, but I hope this gives yo
 ## When to apply Genetic Algorithm
 
 Genetic algorithms work well where it is *computationally prohibitive* to find the best answer to a problem.  This
-includes small datasets where trying all solutions grows quickly, [like a deck of cards](https://www.mcgill.ca/oss/article/did-you-know-infographics/there-are-more-ways-arrange-deck-cards-there-are-atoms-earth),
+includes small datasets where trying all solutions [grows quickly](https://www.mcgill.ca/oss/article/did-you-know-infographics/there-are-more-ways-arrange-deck-cards-there-are-atoms-earth),
 or solutions on large datasets that have quadratic optimal solutions (even a million becomes [huge](http://www.pagetutor.com/trillion/index.html) when squared.
 ).
 
-Genetic algorithms also work well when analyzing something that you're either not allowed to inspect, like a [black box](https://en.wikipedia.org/wiki/Black_box)
+Genetic algorithms also work well when analyzing something that you're either not allowed to reverse engineer, like a [black box](https://en.wikipedia.org/wiki/Black_box)
 or problems that are [beyond](https://en.wikipedia.org/wiki/Laplace%27s_demon) our [current](https://en.wikipedia.org/wiki/Uncertainty_principle) understanding.
-
 
 # Applying genetic algorithms to sorting inputs
 
@@ -264,7 +264,7 @@ and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.
 
 ## Creating a Docker container of your Go program
 
-The first part of batch is turning our Go program into a docker container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
+The first part of batch is turning our Go program into a [docker](https://www.docker.com/resources/what-container) container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
 than it should be, but there exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.  Here are a few that give
 good advice: feel free to copy from any of this
 * [Create the smallest and secured golang docker image based on scratch](https://medium.com/@chemidy/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324)
@@ -350,6 +350,40 @@ to 0.  This lets our environment shut itself down ($$$) when we're not using it.
       ServiceRole: !Ref BatchServiceRole
 ```
 
+Of course we need permissions
+
+
+```yaml
+  IamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EcsInstanceRole
+
+  EcsInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: dynamo-put-results
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ["dynamodb:PutItem"]
+                Resource: !GetAtt [DynamoTable2, Arn]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+```
+
 ### Place to store results of our genetic algorithm
 
 If you're using AWS and need an easy place to store data, [DynamoDB](https://aws.amazon.com/dynamodb/)
@@ -387,4 +421,81 @@ on the secondary index of a solution family sorted by fitness.
       KeySchema:
         - AttributeName: key
           KeyType: HASH
+```
+
+### Configuration for Batch that tells it what to run and how to run it
+
+```yaml
+  JobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: container
+      ContainerProperties:
+        Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
+        Vcpus: 4
+        Memory: 2000
+        Environment:
+          - Name: DYNAMODB_TABLE
+            Value: !Ref DynamoTable2
+          - Name: AWS_REGION
+            Value: !Sub ${AWS::Region}
+
+  JobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      Priority: 1
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref ComputeEnvironment
+```
+
+### AWS Permissions to allow things
+
+Managed docker role: [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
+Batch service role: [AWSBatchServiceRole](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
+
+```yaml
+  BatchServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - batch.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  IamInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EcsInstanceRole
+
+  EcsInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: dynamo-put-results
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ["dynamodb:PutItem"]
+                Resource: !GetAtt [DynamoTable2, Arn]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
 ```
