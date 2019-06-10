@@ -356,7 +356,11 @@ If you're using AWS and need an easy place to store data, [DynamoDB](https://aws
 is the best answer.  It has very little operational overhead, charges proportional to use, and scales
 very well.
 
-The only questions to answer is how we store our results. (insert something about dynamodbd)
+The only questions to answer is how we store the results.  For most genetic algorithms, a hash key on the chromosome
+is enough: with properties about the run.  To quickly get the best (or worse) solutions, we can create a
+[global secondary index](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html) on the fitness
+of the solution, allowing us to [query](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html)
+on the secondary index of a solution family sorted by fitness.
 
 ```yaml
   DynamoTable2:
