@@ -21,7 +21,7 @@ algorithms, since the original parts of the post are focused on how to code and 
 
 You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm)).
 
---- Put picture 
+--- Put picture
 
 Next, you spawn a bunch of [different solutions](https://medium.com/datadriveninvestor/population-initialization-in-genetic-algorithms-ddb037da6773)
 to the same problem.  Together, all of these solutions form a
@@ -464,17 +464,15 @@ want it to do are:
 
 AWS enumerates all of these permissions for you in service roles.  You can see the service role for AWS Batch [here](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
 and it is mentioned in the BatchServiceRole as `arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole`.  This is
-you allowing Batch to do Batch like things.
+you allowing Batch to do Batch like things.  But just because you make a role for batch, doesn't mean that batch can
+use that role.  You allow batch to use the role with the `AssumeRolePolicyDocument`.
 
-But just because you make a role for batch, doesn't mean that batch can use that role.  You allow batch to use the role
-with the `AssumeRolePolicyDocument`.
+Batch will want to use ECS to run and manage the jobs inside your compute environment.  To let our EC2 instance to
+ECS things, we give it the [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
+role and allow ec2 to use that role (inside AssumeRolePolicyDocument for EcsInstanceRole).
 
-You can repeat this same thought process with ECS and [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
-allows an EC2 instance to do ECS things.  The last part is giving our 
-
-
-Managed docker role: [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
-Batch service role: [AWSBatchServiceRole](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
+The last part is a role for our job itself, allowing it to write to our DynamoDB table.  This is inside the "JobRole".
+We allow ecs to assume this role, since ECS will be running our tasks.
 
 ```yaml
   BatchServiceRole:
@@ -500,15 +498,6 @@ Batch service role: [AWSBatchServiceRole](https://docs.aws.amazon.com/batch/late
 
   EcsInstanceRole:
     Type: AWS::IAM::Role
-    Properties:
-      Policies:
-        - PolicyName: dynamo-put-results
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: ["dynamodb:PutItem"]
-                Resource: !GetAtt [DynamoTable2, Arn]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
       AssumeRolePolicyDocument:
