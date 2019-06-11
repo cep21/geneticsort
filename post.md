@@ -520,4 +520,25 @@ Batch service role: [AWSBatchServiceRole](https://docs.aws.amazon.com/batch/late
                 - ec2.amazonaws.com
             Action:
               - sts:AssumeRole
+
+  JobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: dynamo-put-results
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ["dynamodb:PutItem"]
+                Resource: !GetAtt [DynamoTable2, Arn]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
 ```

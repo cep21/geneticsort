@@ -92,14 +92,6 @@ Resources:
   EcsInstanceRole:
     Type: AWS::IAM::Role
     Properties:
-      Policies:
-        - PolicyName: dynamo-put-results
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: ["dynamodb:PutItem"]
-                Resource: !GetAtt [DynamoTable2, Arn]
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
       AssumeRolePolicyDocument:
@@ -123,7 +115,6 @@ Resources:
               - Effect: Allow
                 Action: ["dynamodb:PutItem"]
                 Resource: !GetAtt [DynamoTable2, Arn]
-
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
