@@ -451,6 +451,28 @@ on the secondary index of a solution family sorted by fitness.
 
 ### AWS Permissions to allow things
 
+Permissions inside AWS can initially be very confusing.  An insight that can simplify thinking about what things need
+what permissions is to remember that [AWS Batch](https://aws.amazon.com/batch/) and
+[Amazon ECS](https://aws.amazon.com/ecs/) are not special when interacting with other services: so think of them as if
+you had written the service yourself.
+
+So think about what things you would need to do if you wrote AWS Batch yourself.  A few of the things you would
+want it to do are:
+* Scale up and down instances in an [Auto scaling group](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html)
+* [Start](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_StartTask.html) or stop ECS tasks
+* [Cloudwatch Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) permissions to log application output
+
+AWS enumerates all of these permissions for you in service roles.  You can see the service role for AWS Batch [here](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
+and it is mentioned in the BatchServiceRole as `arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole`.  This is
+you allowing Batch to do Batch like things.
+
+But just because you make a role for batch, doesn't mean that batch can use that role.  You allow batch to use the role
+with the `AssumeRolePolicyDocument`.
+
+You can repeat this same thought process with ECS and [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
+allows an EC2 instance to do ECS things.  The last part is giving our 
+
+
 Managed docker role: [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
 Batch service role: [AWSBatchServiceRole](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
 

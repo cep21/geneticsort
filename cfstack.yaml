@@ -112,6 +112,18 @@ Resources:
             Action:
               - sts:AssumeRole
 
+  JobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: dynamo-put-results
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: ["dynamodb:PutItem"]
+                Resource: !GetAtt [DynamoTable2, Arn]
+
   JobDefinition:
     Type: AWS::Batch::JobDefinition
     Properties:
@@ -120,6 +132,7 @@ Resources:
         Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
         Vcpus: 4
         Memory: 2000
+        JobRoleArn: !GetAtt [JobRole, Arn]
         Environment:
           - Name: DYNAMODB_TABLE
             Value: !Ref DynamoTable2
