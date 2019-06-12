@@ -67,19 +67,19 @@ func (p *Population) calculateFitness(numGoroutine int) {
 	}
 	var wg sync.WaitGroup
 	wg.Add(numGoroutine)
-	idxChan := make(chan int)
+	individuals := make(chan Chromosome)
 	for i := 0; i < numGoroutine; i++ {
 		go func() {
 			defer wg.Done()
-			for idx := range idxChan {
-				p.Individuals[idx].Fitness()
+			for individual := range individuals {
+				individual.Fitness()
 			}
 		}()
 	}
 	for i := 0; i < len(p.Individuals); i++ {
-		idxChan <- i
+		individuals <- p.Individuals[i]
 	}
-	close(idxChan)
+	close(individuals)
 	wg.Wait()
 }
 

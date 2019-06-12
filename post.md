@@ -23,18 +23,18 @@ algorithms, since the original parts of the post are focused on how to code and 
 
 You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm).
 
-![Chromosome picture](https://docs.google.com/drawings/d/e/2PACX-1vTcwsk3ttBTxvG21KXvzM7c9hCRkZzDuf0d62E9ZGoNT8ZJklF2FeVVkTCc7TfCxC8R6ysvzqWTaHl4/pub?w=176&h=174)
+![Chromosome picture](https://docs.google.com/drawings/d/e/2PACX-1vTcwsk3ttBTxvG21KXvzM7c9hCRkZzDuf0d62E9ZGoNT8ZJklF2FeVVkTCc7TfCxC8R6ysvzqWTaHl4/pub?w=276&h=274)
 
 Next, you spawn a bunch of [different solutions](https://medium.com/datadriveninvestor/population-initialization-in-genetic-algorithms-ddb037da6773)
 to the same problem.  Together, all of these solutions form a
 [population](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_population.htm).
 
-![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=141&h=178)
+![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=281&h=348)
 
 Once you have a population of solutions to a problem, you need a [fitness](https://en.wikipedia.org/wiki/Fitness_function) function
 that tells you how good a solution is.
 
-![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=141&h=178)
+![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=281&h=348)
 
 Now make baby solutions!  To start, find two parent solutions.  How you pick your parent solutions is called
 [parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm).
@@ -166,7 +166,7 @@ Your [genetic algorithm](https://github.com/cep21/geneticsort/blob/master/geneti
 run with injections for each genetic algorithm concept.  This process is
 called [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
 
-![Picture of package layout](https://cep21.github.io/geneticsort/imgs/go-package-layout.png)
+![Picture of package layout](https://docs.google.com/drawings/d/e/2PACX-1vT98Y4GBfva4soz0WITWbOalH5dKTLqOuHZjQmwXmyYxdyP0OOy9JUhpl2Kt_E_FVaNSTwgZAgsFcUu/pub?w=650&h=317)
 
 ## Configuration
 
@@ -176,36 +176,32 @@ This will make it easier to later rerun your same code with AWS batch, configuri
 ## Using goroutine parallelism
 
 Genetic algorithms are very parallelizable.  When you're calculating the fitness of each individual, that can happen in
-multiple [goroutines](https://tour.golang.org/concurrency/1).  An easy way to iterate over an array in parallel is to use
-channels of indexes.
+multiple [goroutines](https://tour.golang.org/concurrency/1) by passing each individual to a goroutine.
 
 ![Picture of goroutine order](https://cep21.github.io/geneticsort/imgs/goroutine-order.png)
 
 ```go
 	var wg sync.WaitGroup
 	wg.Add(numGoroutine)
-	idxChan := make(chan int)
+	individuals := make(chan Chromosome)
 	for i := 0; i < numGoroutine; i++ {
 		go func() {
 			defer wg.Done()
-			for idx := range idxChan {
-				p.Individuals[idx].Fitness()
+			for individual := range individuals {
+				individual.Fitness()
 			}
 		}()
 	}
 	for i := 0; i < len(p.Individuals); i++ {
-		idxChan <- i
+		individuals <- p.Individuals[i]
 	}
-	close(idxChan)
+	close(individuals)
 	wg.Wait()
 ```
 
-Here we spawn some number of goroutines that `range` for indexes in an array to process.  We can then feed indexes to a
-channel and the goroutines can process these indexes.  Once we've fed all the indexes to a channel, we `close` the channel
-to tell the `for .. range` inside the goroutine to stop.  Finally, we `wg.Wait` to block until all our goroutines are done.
-
-We can select children for the next generation in a similarly parallel way.  This works because we don't mutate the working
-set while picking parents and making children for the next generation.
+We can select children for the next generation in a similarly parallel way.  However in this case we want to
+aggregate all the children.  We could pass children **back** to the main goroutine, but instead let's take a
+shortcut and just operate on indexes in an array.
 
 ```go
 	var wg sync.WaitGroup
@@ -225,6 +221,9 @@ set while picking parents and making children for the next generation.
 	close(idxChan)
 	wg.Wait()
 ```
+
+Notice how there is no need for the spawned goroutines to pass the individual the calculate back to the main
+goroutine, and no locks needed. Instead, they inject the individual they create into the array.
 
 ## Randomness in parallel algorithms
 
