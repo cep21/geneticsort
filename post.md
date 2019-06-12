@@ -176,9 +176,10 @@ This will make it easier to later rerun your same code with AWS batch, configuri
 ## Using goroutine parallelism
 
 Genetic algorithms are very parallelizable.  When you're calculating the fitness of each individual, that can happen in
-multiple [goroutines](https://tour.golang.org/concurrency/1) by passing each individual to a goroutine.
+multiple [goroutines](https://tour.golang.org/concurrency/1) by passing each individual to a channel and processing
+the channel in parallel.
 
-![Picture of goroutine order](https://cep21.github.io/geneticsort/imgs/goroutine-order.png)
+![Picture of goroutine order](https://docs.google.com/drawings/d/e/2PACX-1vQGvGOTNT3ON7_4P7jmD8Xol8bgwK1BEmGBCylMq60HhuM1r51wT_fyzFmIiI-bYwM8pwq_83EFmzuf/pub?w=737&h=601)
 
 ```go
 	var wg sync.WaitGroup
@@ -202,6 +203,8 @@ multiple [goroutines](https://tour.golang.org/concurrency/1) by passing each ind
 We can select children for the next generation in a similarly parallel way.  However in this case we want to
 aggregate all the children.  We could pass children **back** to the main goroutine, but instead let's take a
 shortcut and just operate on indexes in an array.
+
+![Picture of index goroutines](https://docs.google.com/drawings/d/e/2PACX-1vSCPMva55eFDRnltJu5f3sGqhlow-cxEQvbcGhGSFBN9c8__smmHRnmF7pWsqEIzJblM8L8bprp61Dx/pub?w=799&h=423)
 
 ```go
 	var wg sync.WaitGroup
@@ -230,6 +233,8 @@ goroutine, and no locks needed. Instead, they inject the individual they create 
 Genetic algorithms require random number generation.  This can cause problems when running in parallel
 because random number generators are almost never thread safe.  Thread safety is forced onto them with locks or
 [mutexes](mutexes-wikipedia).
+
+![Picture of locked rand usage](https://docs.google.com/drawings/d/e/2PACX-1vSZBYTOXx52OtR8g0CeHlU9ViZ-S_QTM-Gpu4XJzgmX3F-M7G5scnA4d_Il6BaIwL4SfzmBZcNrLt8d/pub?w=1071&h=551)
 
 If you use Go's built in [rand](rand) package's random number generators you'll notice they use a `globalRand`
 singleton.
@@ -264,7 +269,6 @@ Ideally we would be able to not require locking when we need random number gener
 a different random number generator for each `index` of a member of our population, or one for each goroutine we want
 to run in parallel.
 
-![Picture of locked rand usage](https://cep21.github.io/geneticsort/imgs/locked-rand.png)
 ![Picture of distributed rand](https://cep21.github.io/geneticsort/imgs/distributed-rand.png)
 
 ```go
