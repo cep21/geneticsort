@@ -79,10 +79,10 @@ includes small datasets where trying all solutions [grows quickly](https://www.m
 or solutions on large datasets that have quadratic optimal solutions (even a million becomes [huge](http://www.pagetutor.com/trillion/index.html) when squared.
 ).
 
-![Picture of blackbox](https://cep21.github.io/geneticsort/imgs/blackbox-genetic-pic.png)
-
 Genetic algorithms also work well when analyzing something that you're either not allowed to reverse engineer, like a [black box](https://en.wikipedia.org/wiki/Black_box)
 or problems that are [beyond](https://en.wikipedia.org/wiki/Laplace%27s_demon) our [current](https://en.wikipedia.org/wiki/Uncertainty_principle) understanding.
+
+![Picture of blackbox](https://docs.google.com/drawings/d/e/2PACX-1vSRUNakfe-27XxP43Bg-Ip5Egz1AwEp4mfqyNKtLenpm6ji1SXO2MKTwDoDkLn0RZOaGTPkSRdeU4Tj/pub?w=960&h=720)
 
 # Applying genetic algorithms to sorting inputs
 
@@ -92,7 +92,7 @@ isn't too long and is worth a read.  The implementation is a combination of
 * [Shellsort](https://en.wikipedia.org/wiki/Shellsort) when the list or segment size is small
 * [Heapsort](https://en.wikipedia.org/wiki/Heapsort) if quicksort recurses too much
 
-![Picture of go sort flow charts](https://cep21.github.io/geneticsort/imgs/go-sort-flow-charts.png)
+![Picture of go sort flow charts](https://docs.google.com/drawings/d/e/2PACX-1vTo9Dy3OFS52YMjDtDwCUj0R1c5csKkYhvJZCNzR59T8iynm5qbDNlNMinju_ZsWibAU47Oai6ZKLUU/pub?w=633&h=525)
 
 There exist [antiquicksort](https://www.cs.dartmouth.edu/~doug/mdmspe.pdf) algorithms to find worse case quicksort inputs,
 and the go sort tests [use them](https://github.com/golang/go/blob/go1.12.5/src/sort/sort_test.go#L458).  It's not
@@ -105,24 +105,32 @@ let's define genetic algorithm terms in the context of finding a worse case sort
 
 A chromosome is a list of numbers to be sorted.  For example, `[1, 6, 3, 4, 5, 2]`.
 
-![Picture of array of numbers](https://cep21.github.io/geneticsort/imgs/go-array-numbers.png)
+![Picture of array of numbers](https://docs.google.com/drawings/d/e/2PACX-1vTxAAvsmR1YznD8gDIdzr0JldPoBZrQj1GjyRyZoaWzEeMCHJ2QAPyZraslfRX_Eacr89rfnW3Wkcg0/pub?w=355&h=106)
 
 ## Fitness
 
 The fitness of a chromosome is how many comparison operations are used in the sort.  Go's implementation guarantees `O(n*log(n))`.
-In the example case, `[1, 6, 3, 4, 5, 2]` is sorted in 4 comparisons by Go, so the fitness of that array is 4.
+In the example case, `[1, 6, 3, 4, 5, 2]` is sorted in 12 comparisons by Go, so the fitness of that array is 12.
 
-![Picture of array of with score below](https://cep21.github.io/geneticsort/imgs/go-array-numbers-score.png)
+<--
+    https://play.golang.org/p/6ekegNhrNvg
+-->
+
+![Picture of array of with score below](https://docs.google.com/drawings/d/e/2PACX-1vQoIWl9g0YmAVnqCxrK-wR2_wwF7HVUEYpgd4-LgBPP0_lWTaOkdCEocZWuX0SOgo4wAy-KbdYTbMsD/pub?w=355&h=106)
 
 ## Parent selection
 
 For our case, we will use K-3 [tournament selection](https://en.wikipedia.org/wiki/Tournament_selection) with p=1.  That
-means we find 3 chromosomes, and the best of the 3 becomes a parent.
+means we find 3 chromosomes, and the fittest of the 3 becomes a parent.
 
 ## Crossover
 
 We will use [single point crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)#Single-point_crossover)
 by picking a random point in each parent and spawning a child with half the array from one parent and half from another.
+
+<!--
+    https://play.golang.org/p/3yRPfRpOdJx
+-->
 
 For example, the parents `[1, 6, 3, 4, 5, 2]` and `[6, 4, 3, 5, 2, 1]`, if crossed over at index `1` I would get
 array `[1, 6, 3, 5, 2, 1]`.
@@ -139,7 +147,7 @@ by changing the 2 to 10.
 
 # Architecting a genetic algorithm in Go
 
-[Python](https://www.python.org/) is a commonly used langauge for for machine learning and data science, especially 
+[Python](https://www.python.org/) is a commonly used language for for machine learning and data science, especially 
 combined with [NumPy](https://www.numpy.org/).  Python is perfectly fine, but I like Go's speed, static typing, and
 language structure and use it for most applications.
 
