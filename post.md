@@ -1,5 +1,7 @@
 # Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
 
+![Picture gopher DNA batch](https://docs.google.com/drawings/d/e/2PACX-1vTiCVt0eZpkSRRWjUgunIbFNETycu5hM72DPaS7xsdz2-hhPNQUnYW1tEl_DnG-zp4f09p3YXCZiaH-/pub?w=776&amp;h=600)
+
 This post will give a walk thru of the following concepts:
 * What are genetic algorithms
 * Applying genetic algorithms to black box inputs, with sorting as an example
@@ -19,53 +21,53 @@ algorithms, since the original parts of the post are focused on how to code and 
 
 ## Basics of genetic algorithms
 
-You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm)).
+You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm).
 
---- Put picture
+![Chromosome picture](https://docs.google.com/drawings/d/e/2PACX-1vTcwsk3ttBTxvG21KXvzM7c9hCRkZzDuf0d62E9ZGoNT8ZJklF2FeVVkTCc7TfCxC8R6ysvzqWTaHl4/pub?w=176&h=174)
 
 Next, you spawn a bunch of [different solutions](https://medium.com/datadriveninvestor/population-initialization-in-genetic-algorithms-ddb037da6773)
 to the same problem.  Together, all of these solutions form a
 [population](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_population.htm).
 
--- Put picture of lots of problems
+![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=141&h=178)
 
 Once you have a population of solutions to a problem, you need a [fitness](https://en.wikipedia.org/wiki/Fitness_function) function
 that tells you how good a solution is.
 
---- Picture describing each above problem and how good or bad it was.
+![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=141&h=178)
 
 Now make baby solutions!  To start, find two parent solutions.  How you pick your parent solutions is called
 [parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm).
 Just like natural selection, you want to bias to picking fitter parents.  You could imagine combining the DNA of 3
 or more parents, but for this example I just pick two.
 
---- Picture of two of the solutions.
+![Picture of just two solutions](https://docs.google.com/drawings/d/e/2PACX-1vRxjaRoNWjzpUuv7nseozB8M2waP0U30_fyup19V_Bs76JeyqKTrbhk8-jbbz1awP6MrVIUl-LnU7I_/pub?w=281&h=124)
 
 With two parents, you need to make a child solution.  This process is called [crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm).
 Your child solution should be some combination of the parents.  There are [lots](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_crossover.htm) of ways to do this.
 
---- Picture of a combination solution
+![Picture of combined solution](https://docs.google.com/drawings/d/e/2PACX-1vT128MYP3oK2lh3whfkuhrGqX-cYSCex9Qf1WsfC6P7vbFFSNgpea5jaAZ5xhHwjfrsMdKzwPK7acXB/pub?w=856&h=470)
 
 Finally you want to [mutate](https://en.wikipedia.org/wiki/Mutation_(genetic_algorithm)) your solution.  Mutation lets you
 stumble upon great solutions.  Just like for animals, mutation should be rare and may not even happen for all children.
 
---- Picture of mutation
+![Picture of mutated solution](https://docs.google.com/drawings/d/e/2PACX-1vQgJV-dNsAZDJcsK6iS6bHZqsCoe9vbFRWiqc7ylhgFfn8OxsTywCQi7HtX4-HkFWdOriEkpJDHYpNE/pub?w=347&h=423)
 
 Repeat this process a bunch of times until you have a new population.
 
---- Picture of mutated population
+![Picture of mutated combined population](https://docs.google.com/drawings/d/e/2PACX-1vSPXvPSFFtkgZuDlIFn4XxsFvVudFZ0jDehzE7ubljvWWo0MMRsKEj5wPYhOblha5urz4Vsom6hY_z1/pub?w=991&h=652)
 
 The number of solutions to your problem has now grown.  You need to kill off solutions to keep your population in check.
 How you do this is called [survivor selection](https://en.wikipedia.org/wiki/Selection_(genetic_algorithm).  Maybe you
 kill off the older solutions or make the solutions fight to the death with each other.
 
---- Picture of survived solutions
+![Picture of surviving population](https://docs.google.com/drawings/d/e/2PACX-1vR69DqYZPVZztSrMUHf_bjjHOSxUHaxwxozIXiFcnkZx2Zu3OYd9I5StuTGCZvqg46kObpZjFP5-Xr2/pub?w=991&h=652)
 
 At this point you should have a population of solutions that is slightly better than your previous solutions.  It's some
 combination of how you started, with a bit of mutation.  Repeat this process as much as you want.  When you decide
 to stop is called your [termination condition](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_termination_condition.htm).
 
---- Picture of a bunch of strange solutions
+![Picture of ending solutions](https://docs.google.com/drawings/d/e/2PACX-1vQkhf0xKKitzBDE8NeTkGX0KW6022NZJ88PONT5Zy8nOAtwtc1UkNEgw6a65_8yc9YKsL96L04i4uQL/pub?w=352&h=349)
 
 When you stop, you find the best solution left and that's the evolved answer to your problem.  The field of genetic algorithms
 and machine learning is way deeper than few paragraphs, but I hope this gives you a general sense of how it works.
@@ -76,6 +78,8 @@ Genetic algorithms work well where it is *computationally prohibitive* to find t
 includes small datasets where trying all solutions [grows quickly](https://www.mcgill.ca/oss/article/did-you-know-infographics/there-are-more-ways-arrange-deck-cards-there-are-atoms-earth),
 or solutions on large datasets that have quadratic optimal solutions (even a million becomes [huge](http://www.pagetutor.com/trillion/index.html) when squared.
 ).
+
+![Picture of blackbox](https://cep21.github.io/geneticsort/imgs/blackbox-genetic-pic.png)
 
 Genetic algorithms also work well when analyzing something that you're either not allowed to reverse engineer, like a [black box](https://en.wikipedia.org/wiki/Black_box)
 or problems that are [beyond](https://en.wikipedia.org/wiki/Laplace%27s_demon) our [current](https://en.wikipedia.org/wiki/Uncertainty_principle) understanding.
@@ -88,6 +92,8 @@ isn't too long and is worth a read.  The implementation is a combination of
 * [Shellsort](https://en.wikipedia.org/wiki/Shellsort) when the list or segment size is small
 * [Heapsort](https://en.wikipedia.org/wiki/Heapsort) if quicksort recurses too much
 
+![Picture of go sort flow charts](https://cep21.github.io/geneticsort/imgs/go-sort-flow-charts.png)
+
 There exist [antiquicksort](https://www.cs.dartmouth.edu/~doug/mdmspe.pdf) algorithms to find worse case quicksort inputs,
 and the go sort tests [use them](https://github.com/golang/go/blob/go1.12.5/src/sort/sort_test.go#L458).  It's not
 guaranteed to produce worse case inputs for Go's case since Go uses a combination of sorting methods, but it will find
@@ -99,10 +105,14 @@ let's define genetic algorithm terms in the context of finding a worse case sort
 
 A chromosome is a list of numbers to be sorted.  For example, `[1, 6, 3, 4, 5, 2]`.
 
+![Picture of array of numbers](https://cep21.github.io/geneticsort/imgs/go-array-numbers.png)
+
 ## Fitness
 
 The fitness of a chromosome is how many comparison operations are used in the sort.  Go's implementation guarantees `O(n*log(n))`.
 In the example case, `[1, 6, 3, 4, 5, 2]` is sorted in 4 comparisons by Go, so the fitness of that array is 4.
+
+![Picture of array of with score below](https://cep21.github.io/geneticsort/imgs/go-array-numbers-score.png)
 
 ## Parent selection
 
@@ -117,11 +127,15 @@ by picking a random point in each parent and spawning a child with half the arra
 For example, the parents `[1, 6, 3, 4, 5, 2]` and `[6, 4, 3, 5, 2, 1]`, if crossed over at index `1` I would get
 array `[1, 6, 3, 5, 2, 1]`.
 
+![Picture of array crossover](https://cep21.github.io/geneticsort/imgs/go-array-crossover.png)
+
 ## Mutate
 
 For mutate, we'll just randomly change an index in the array.  We can do this with `1/m` ratio where `m` increases slowly
 over time as we fail to improve our fitness.  For example, the array `[6, 4, 3, 5, 2, 1]` may mutate to `[6, 4, 3, 5, 10, 1]`
 by changing the 2 to 10.
+
+![Picture of array with single value changed](https://cep21.github.io/geneticsort/imgs/go-array-single-value-changed.png)
 
 # Architecting a genetic algorithm in Go
 
@@ -140,6 +154,8 @@ Your [genetic algorithm](https://github.com/cep21/geneticsort/blob/master/geneti
 run with injections for each genetic algorithm concept.  This process is
 called [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
 
+![Picture of package layout](https://cep21.github.io/geneticsort/imgs/go-package-layout.png)
+
 ## Configuration
 
 Load configuration directly with [environment variables](https://github.com/cep21/geneticsort/blob/master/main.go#L33).
@@ -150,6 +166,8 @@ This will make it easier to later rerun your same code with AWS batch, configuri
 Genetic algorithms are very parallelizable.  When you're calculating the fitness of each individual, that can happen in
 multiple [goroutines](https://tour.golang.org/concurrency/1).  An easy way to iterate over an array in parallel is to use
 channels of indexes.
+
+![Picture of goroutine order](https://cep21.github.io/geneticsort/imgs/goroutine-order.png)
 
 ```go
 	var wg sync.WaitGroup
@@ -235,6 +253,9 @@ Ideally we would be able to not require locking when we need random number gener
 a different random number generator for each `index` of a member of our population, or one for each goroutine we want
 to run in parallel.
 
+![Picture of locked rand usage](https://cep21.github.io/geneticsort/imgs/locked-rand.png)
+![Picture of distributed rand](https://cep21.github.io/geneticsort/imgs/distributed-rand.png)
+
 ```go
 
 type arrayRandForIdx struct {
@@ -263,6 +284,8 @@ After making a self contained Go program that executes our genetic algorithm, we
 and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.com/batch/) makes this [easy](https://www.youtube.com/watch?v=T4aAWrGHmxQ).
 
 ## Creating a Docker container of your Go program
+
+![Picture of Gopher inside docker icon](https://cep21.github.io/geneticsort/imgs/docker-gopher.png)
 
 The first part of batch is turning our Go program into a [docker](https://www.docker.com/resources/what-container) container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
 than it should be, but there exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.  Here are a few that give
@@ -310,6 +333,8 @@ An overly simplistic summary of the resources we're creating in our stack are
 
 ### Place to put our genetic algorithm
 
+![Picture of ECR with docker inside](https://cep21.github.io/geneticsort/imgs/ecr-docker-inside.png)
+
 [ECR](https://aws.amazon.com/ecr/) is an AWS managed place to store Docker containers and the configuration for it
 is very basic.
 
@@ -325,6 +350,8 @@ scaling the compute environment for us, which are scaled according to virtual CP
 Each vCPU is a [thread in a CPU core](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html#instance-cpu-options-rules)
 and N of these should let us run N concurrent threads of logic.  We ideally shouldn't care if we get one beefy computer
 running 64 concurrent threads, or 8 medium size computers running 8 concurrent threads.
+
+![Picture of two vCPU setups](https://cep21.github.io/geneticsort/imgs/multiple-vcpu.png)
 
 Another important part is setting [MinvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-minvcpus) and
 [DesiredvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-desiredvcpus)
@@ -350,45 +377,13 @@ to 0.  This lets our environment shut itself down ($$$) when we're not using it.
       ServiceRole: !Ref BatchServiceRole
 ```
 
-Of course we need permissions
-
-
-```yaml
-  IamInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref EcsInstanceRole
-
-  EcsInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Policies:
-        - PolicyName: dynamo-put-results
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: ["dynamodb:PutItem"]
-                Resource: !GetAtt [DynamoTable2, Arn]
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - sts:AssumeRole
-```
-
 ### Place to store results of our genetic algorithm
 
 If you're using AWS and need an easy place to store data, [DynamoDB](https://aws.amazon.com/dynamodb/)
 is the best answer.  It has very little operational overhead, charges proportional to use, and scales
 very well.
+
+![Picture of DynamoDB key scheme](https://cep21.github.io/geneticsort/imgs/dynamodb-key-scheme.png)
 
 The only questions to answer is how we store the results.  For most genetic algorithms, a hash key on the chromosome
 is enough: with properties about the run.  To quickly get the best (or worse) solutions, we can create a
@@ -424,6 +419,10 @@ on the secondary index of a solution family sorted by fitness.
 ```
 
 ### Configuration for Batch that tells it what to run and how to run it
+
+<!-- From https://aws.amazon.com/blogs/compute/using-aws-cloudformation-to-create-and-manage-aws-batch-resources/ -->
+![Batch environment](https://d2908q01vomqb2.cloudfront.net/1b6453892473a467d07372d45eb05abc2031647a/2018/04/23/AWSBatchresoucreinteract-diagram.png)
+
 
 ```yaml
   JobDefinition:
@@ -473,6 +472,8 @@ role and allow ec2 to use that role (inside AssumeRolePolicyDocument for EcsInst
 
 The last part is a role for our job itself, allowing it to write to our DynamoDB table.  This is inside the "JobRole".
 We allow ecs to assume this role, since ECS will be running our tasks.
+
+![Picture of permissions](https://cep21.github.io/geneticsort/imgs/permissions-setup.png)
 
 ```yaml
   BatchServiceRole:
