@@ -112,7 +112,7 @@ A chromosome is a list of numbers to be sorted.  For example, `[1, 6, 3, 4, 5, 2
 The fitness of a chromosome is how many comparison operations are used in the sort.  Go's implementation guarantees `O(n*log(n))`.
 In the example case, `[1, 6, 3, 4, 5, 2]` is sorted in 12 comparisons by Go, so the fitness of that array is 12.
 
-<--
+<!--
     https://play.golang.org/p/6ekegNhrNvg
 -->
 
@@ -135,7 +135,11 @@ by picking a random point in each parent and spawning a child with half the arra
 For example, the parents `[1, 6, 3, 4, 5, 2]` and `[6, 4, 3, 5, 2, 1]`, if crossed over at index `1` I would get
 array `[1, 6, 3, 5, 2, 1]`.
 
-![Picture of array crossover](https://cep21.github.io/geneticsort/imgs/go-array-crossover.png)
+<!--
+    https://play.golang.org/p/2itbh_ysV1o
+-->
+
+![Picture of array crossover](https://docs.google.com/drawings/d/e/2PACX-1vS_n1M-6mVGKyo11gnBoDnr-JCv8txOgO5onnkXa3Uc7LkiE4takqqPHzX5yDwp3_kM0HDVLdOTZXsw/pub?w=727&h=272)
 
 ## Mutate
 
@@ -143,7 +147,7 @@ For mutate, we'll just randomly change an index in the array.  We can do this wi
 over time as we fail to improve our fitness.  For example, the array `[6, 4, 3, 5, 2, 1]` may mutate to `[6, 4, 3, 5, 10, 1]`
 by changing the 2 to 10.
 
-![Picture of array with single value changed](https://cep21.github.io/geneticsort/imgs/go-array-single-value-changed.png)
+![Picture of array with single value changed](https://docs.google.com/drawings/d/e/2PACX-1vRNo8s4WHCdFeRFNph5qTQBw1A_xMOpg7B4VlOAnbcjaSSU0_kYgyyNs48pWYrzr91xeoMOqs-S1h6A/pub?w=360&h=266)
 
 # Architecting a genetic algorithm in Go
 
