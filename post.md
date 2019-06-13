@@ -29,12 +29,12 @@ Next, you spawn a bunch of [different solutions](https://medium.com/datadrivenin
 to the same problem.  Together, all of these solutions form a
 [population](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_population.htm).
 
-![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=281&h=348)
+![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=424&h=535)
 
 Once you have a population of solutions to a problem, you need a [fitness](https://en.wikipedia.org/wiki/Fitness_function) function
 that tells you how good a solution is.
 
-![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=281&h=348)
+![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=711&h=966)
 
 Now make baby solutions!  To start, find two parent solutions.  How you pick your parent solutions is called
 [parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm).
