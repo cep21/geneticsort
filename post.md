@@ -269,7 +269,7 @@ Ideally we would be able to not require locking when we need random number gener
 a different random number generator for each `index` of a member of our population, or one for each goroutine we want
 to run in parallel.
 
-![Picture of distributed rand](https://cep21.github.io/geneticsort/imgs/distributed-rand.png)
+![Picture of distributed rand](https://docs.google.com/drawings/d/e/2PACX-1vR_WuzhpdCT1PAUIWSL3SKMxUzy5Ia0q9YK7olkNZwlPmnqZPqPaiX8Aw_OrY0oXkNs3Jp1qRRIYODn/pub?w=1141&h=438)
 
 ```go
 
@@ -300,7 +300,7 @@ and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.
 
 ## Creating a Docker container of your Go program
 
-![Picture of Gopher inside docker icon](https://cep21.github.io/geneticsort/imgs/docker-gopher.png)
+![Picture of Gopher inside docker icon](https://docs.google.com/drawings/d/e/2PACX-1vSgOnexNdv_cbhfocObCl8x-qpOz2qD0MIHIGE21SS4ogoOaCqYazNQdcvmzrN3H7p4vm2eUgjdnRis/pub?w=441&h=285)
 
 The first part of batch is turning our Go program into a [docker](https://www.docker.com/resources/what-container) container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
 than it should be, but there exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.  Here are a few that give
@@ -347,8 +347,6 @@ An overly simplistic summary of the resources we're creating in our stack are
 * [AWS::EC2::SecurityGroup](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html): A [firewall](https://en.wikipedia.org/wiki/Firewall_(computing)). 
 
 ### Place to put our genetic algorithm
-
-![Picture of ECR with docker inside](https://cep21.github.io/geneticsort/imgs/ecr-docker-inside.png)
 
 [ECR](https://aws.amazon.com/ecr/) is an AWS managed place to store Docker containers and the configuration for it
 is very basic.
