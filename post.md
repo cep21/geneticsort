@@ -360,11 +360,11 @@ is very basic.
 
 AWS batch can [manage](https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html#managed_compute_environments)
 scaling the compute environment for us, which are scaled according to virtual CPU units (vCPU).
-Each vCPU is a [thread in a CPU core](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html#instance-cpu-options-rules)
+Each vCPU, except for T2 instances, is a [thread in a CPU core](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html#instance-cpu-options-rules)
 and N of these should let us run N concurrent threads of logic.  We ideally shouldn't care if we get one beefy computer
 running 64 concurrent threads, or 8 medium size computers running 8 concurrent threads.
 
-![Picture of two vCPU setups](https://cep21.github.io/geneticsort/imgs/multiple-vcpu.png)
+![Picture of two vCPU setups](https://docs.google.com/drawings/d/e/2PACX-1vSsG2AijieIue3IAYzXJAhyzy8ZEiekgReaS1izez1cL-fUzXwrA-j9bRx9HCnu3-ousu4LTP9-FZ4L/pub?w=1105&h=714)
 
 Another important part is setting [MinvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-minvcpus) and
 [DesiredvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-desiredvcpus)
