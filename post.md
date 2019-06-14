@@ -21,7 +21,8 @@ algorithms, since the original parts of the post are focused on how to code and 
 
 ## Basics of genetic algorithms
 
-You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm).
+You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm)).
+For this example, we'll try to optimize the best profile photo for you on a dating website.
 
 ![Chromosome picture](https://docs.google.com/drawings/d/e/2PACX-1vTcwsk3ttBTxvG21KXvzM7c9hCRkZzDuf0d62E9ZGoNT8ZJklF2FeVVkTCc7TfCxC8R6ysvzqWTaHl4/pub?w=276&h=274)
 
@@ -41,7 +42,7 @@ Now make baby solutions!  To start, find two parent solutions.  How you pick you
 Just like natural selection, you want to bias to picking fitter parents.  You could imagine combining the DNA of 3
 or more parents, but for this example I just pick two.
 
-![Picture of just two solutions](https://docs.google.com/drawings/d/e/2PACX-1vRxjaRoNWjzpUuv7nseozB8M2waP0U30_fyup19V_Bs76JeyqKTrbhk8-jbbz1awP6MrVIUl-LnU7I_/pub?w=281&h=124)
+![Picture of just two solutions](https://docs.google.com/drawings/d/e/2PACX-1vRxjaRoNWjzpUuv7nseozB8M2waP0U30_fyup19V_Bs76JeyqKTrbhk8-jbbz1awP6MrVIUl-LnU7I_/pub?w=500&h=250)
 
 With two parents, you need to make a child solution.  This process is called [crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm).
 Your child solution should be some combination of the parents.  There are [lots](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_crossover.htm) of ways to do this.
@@ -58,7 +59,7 @@ Repeat this process a bunch of times until you have a new population.
 ![Picture of mutated combined population](https://docs.google.com/drawings/d/e/2PACX-1vSPXvPSFFtkgZuDlIFn4XxsFvVudFZ0jDehzE7ubljvWWo0MMRsKEj5wPYhOblha5urz4Vsom6hY_z1/pub?w=991&h=652)
 
 The number of solutions to your problem has now grown.  You need to kill off solutions to keep your population in check.
-How you do this is called [survivor selection](https://en.wikipedia.org/wiki/Selection_(genetic_algorithm).  Maybe you
+How you do this is called [survivor selection](https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)).  Maybe you
 kill off the older solutions or make the solutions fight to the death with each other.
 
 ![Picture of surviving population](https://docs.google.com/drawings/d/e/2PACX-1vR69DqYZPVZztSrMUHf_bjjHOSxUHaxwxozIXiFcnkZx2Zu3OYd9I5StuTGCZvqg46kObpZjFP5-Xr2/pub?w=991&h=652)
@@ -395,8 +396,6 @@ to 0.  This lets our environment shut itself down ($$$) when we're not using it.
 If you're using AWS and need an easy place to store data, [DynamoDB](https://aws.amazon.com/dynamodb/)
 is the best answer.  It has very little operational overhead, charges proportional to use, and scales
 very well.
-
-![Picture of DynamoDB key scheme](https://cep21.github.io/geneticsort/imgs/dynamodb-key-scheme.png)
 
 The only questions to answer is how we store the results.  For most genetic algorithms, a hash key on the chromosome
 is enough: with properties about the run.  To quickly get the best (or worse) solutions, we can create a
