@@ -77,13 +77,16 @@ and machine learning is way deeper than few paragraphs, but I hope this gives yo
 
 Genetic algorithms work well where it is *computationally prohibitive* to find the best answer to a problem.  This
 includes small datasets where trying all solutions [grows quickly](https://www.mcgill.ca/oss/article/did-you-know-infographics/there-are-more-ways-arrange-deck-cards-there-are-atoms-earth),
-or solutions on large datasets that have quadratic optimal solutions (even a million becomes [huge](http://www.pagetutor.com/trillion/index.html) when squared.
-).
+or solutions on large datasets that have quadratic optimal solutions (even a million becomes [huge](http://www.pagetutor.com/trillion/index.html) when squared).
 
 Genetic algorithms also work well when analyzing something that you're either not allowed to reverse engineer, like a [black box](https://en.wikipedia.org/wiki/Black_box)
 or problems that are [beyond](https://en.wikipedia.org/wiki/Laplace%27s_demon) our [current](https://en.wikipedia.org/wiki/Uncertainty_principle) understanding.
 
 ![Picture of blackbox](https://docs.google.com/drawings/d/e/2PACX-1vSRUNakfe-27XxP43Bg-Ip5Egz1AwEp4mfqyNKtLenpm6ji1SXO2MKTwDoDkLn0RZOaGTPkSRdeU4Tj/pub?w=960&h=720)
+
+The final aspect that allows genetic algorithms to work well are good crossover and mutation algorithms.
+* Crossover: A reasonable way to combine two different solutions
+* Mutation: Most small changes to the solution should produce small changes in results
 
 # Applying genetic algorithms to sorting inputs
 
@@ -475,17 +478,17 @@ want it to do are:
 
 AWS enumerates all of these permissions for you in service roles.  You can see the service role for AWS Batch [here](https://docs.aws.amazon.com/batch/latest/userguide/service_IAM_role.html)
 and it is mentioned in the BatchServiceRole as `arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole`.  This is
-you allowing Batch to do Batch like things.  But just because you make a role for batch, doesn't mean that batch can
+you allowing Batch to do Batch like things.  But just because you make a role for batch does not mean that batch can
 use that role.  You allow batch to use the role with the `AssumeRolePolicyDocument`.
 
-Batch will want to use ECS to run and manage the jobs inside your compute environment.  To let our EC2 instance to
+Batch will want to use ECS to run and manage the jobs inside your compute environment.  To let our EC2 instance do
 ECS things, we give it the [AmazonEC2ContainerServiceforEC2Role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_managed_policies.html#AmazonEC2ContainerServiceforEC2Role)
 role and allow ec2 to use that role (inside AssumeRolePolicyDocument for EcsInstanceRole).
 
 The last part is a role for our job itself, allowing it to write to our DynamoDB table.  This is inside the "JobRole".
 We allow ecs to assume this role, since ECS will be running our tasks.
 
-![Picture of permissions](https://cep21.github.io/geneticsort/imgs/permissions-setup.png)
+![Picture of permissions](https://docs.google.com/drawings/d/e/2PACX-1vQIUdFb_mawOrhRNW-w3wEjxr3VNqNf1-_v2SPEocgaOxhkGqO66X-YI42BtjUor_7HY7ikIyWOjkO3/pub?w=677&h=326)
 
 ```yaml
   BatchServiceRole:
