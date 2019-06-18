@@ -44,7 +44,7 @@ or more parents, but for this example I just pick two.
 
 ![Picture of just two solutions](./imgs/two_solutions.png)
 
-With two parents, you need to make a child solution.  This process is called [crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm).
+With two parents, you need to make a child solution.  This process is called [crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)).
 Your child solution should be some combination of the parents.  There are [lots](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_crossover.htm) of ways to do this.
 
 ![Picture of combined solution](./imgs/child_solution.png)
@@ -547,3 +547,46 @@ We allow ecs to assume this role, since ECS will be running our tasks.
             Action:
               - sts:AssumeRole
 ```
+
+## Running the job
+
+With everything setup, the last part is to run our job.  To do this from the CLI, we use [submit-job](https://docs.aws.amazon.com/cli/latest/reference/batch/submit-job.html).
+The only problem is CloudFormation creates random names for everything so we don't know the name of the job
+we want to run!
+
+We can use the CLI to also parse out the name of the job from the CloudFormation output.
+
+```bash
+STACK_NAME=genetic-sort-stack
+function stack_output() {
+  # Used from https://stackoverflow.com/questions/41628487/getting-outputs-from-aws-cloudformation-describe-stacks
+  local RES=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" --output text)
+  if [[ -z ${RES} ]]; then
+    exit 1
+  fi
+  echo ${RES}
+}
+```
+
+The important part here is the `--query`.  This uses [JMESPath](http://jmespath.org/) to parse the JSON return of the
+CLI call.  I strongly recommend learning the aws CLI's JMESPath syntax if you want to quickly hack.  With a way
+to get the job's name out, we can now run the job from the CLI.
+
+```bash
+export NUM_JOBS=${NUM_JOBS-2}
+export JOB_RUN_TIME=${JOB_RUN_TIME-1m}
+export ARRAY_SIZE=${ARRAY_SIZE-1000}
+
+function run_job() {
+    aws batch submit-job --job-name geneticsort \
+        --job-queue $(stack_output JobQueue) \
+        --job-definition $(stack_output JobDefinition) \
+        --array-properties "size=${NUM_JOBS}" \
+        --container-overrides "environment=[{name=ARRAY_SIZE,value=${ARRAY_SIZE}},{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}}]"
+}
+```
+
+## Try it out from the CLI.
+
+If you have the AWS CLI setup correctly, and go installed, you should be able to run `./make.sh everything` to see it
+all happen!

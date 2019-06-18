@@ -20,6 +20,14 @@ function cli_works() {
 	aws sts get-caller-identity &> /dev/null
 }
 
+function verify() {
+	which aws
+	verify_cli
+	which go
+	which golangci-lint
+	which docker
+}
+
 function account_id() {
     aws sts get-caller-identity --query Account --output text
 }
@@ -126,6 +134,7 @@ function everything() {
         echo "Please run git-commit before you run everything"
         exit 1
     fi
+    verify
     go_build
     run_test
     lint
