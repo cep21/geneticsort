@@ -1,6 +1,6 @@
 # Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
 
-![Picture gopher DNA batch](https://docs.google.com/drawings/d/e/2PACX-1vTiCVt0eZpkSRRWjUgunIbFNETycu5hM72DPaS7xsdz2-hhPNQUnYW1tEl_DnG-zp4f09p3YXCZiaH-/pub?w=776&amp;h=600)
+![Picture gopher DNA batch](./imgs/gopher_batch_dna.png)
 
 This post will give a walk thru of the following concepts:
 * What are genetic algorithms
@@ -24,51 +24,51 @@ algorithms, since the original parts of the post are focused on how to code and 
 You start with a solution to a problem.  This solution is called a [chromosome](https://en.wikipedia.org/wiki/Chromosome_(genetic_algorithm)).
 For this example, we'll try to optimize the best profile photo for you on a dating website.
 
-![Chromosome picture](https://docs.google.com/drawings/d/e/2PACX-1vTcwsk3ttBTxvG21KXvzM7c9hCRkZzDuf0d62E9ZGoNT8ZJklF2FeVVkTCc7TfCxC8R6ysvzqWTaHl4/pub?w=276&h=274)
+![Chromosome picture](./imgs/chromosome_picture.png)
 
 Next, you spawn a bunch of [different solutions](https://medium.com/datadriveninvestor/population-initialization-in-genetic-algorithms-ddb037da6773)
 to the same problem.  Together, all of these solutions form a
 [population](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_population.htm).
 
-![Population picture](https://docs.google.com/drawings/d/e/2PACX-1vTbGNvEBQLDTLVxUU3enfQB0UMQM8XIzEl6IUpHvHdIAo3x1Jf_fkmjdPTpdPPGSuALiiHll32-Fx9D/pub?w=424&h=535)
+![Population picture](./imgs/population_picture.png)
 
 Once you have a population of solutions to a problem, you need a [fitness](https://en.wikipedia.org/wiki/Fitness_function) function
 that tells you how good a solution is.
 
-![Population picture with fitness](https://docs.google.com/drawings/d/e/2PACX-1vQtKb8Uy3Y9bAi8NQoAHubywG_d5QXlG0UW9qZzreJ1wgV3a_KJecyfvD-X0bbi-9G9KjSj3DsgsJOU/pub?w=711&h=966)
+![Population picture with fitness](./imgs/population_fitness.png)
 
 Now make baby solutions!  To start, find two parent solutions.  How you pick your parent solutions is called
 [parent selection](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_parent_selection.htm).
 Just like natural selection, you want to bias to picking fitter parents.  You could imagine combining the DNA of 3
 or more parents, but for this example I just pick two.
 
-![Picture of just two solutions](https://docs.google.com/drawings/d/e/2PACX-1vRxjaRoNWjzpUuv7nseozB8M2waP0U30_fyup19V_Bs76JeyqKTrbhk8-jbbz1awP6MrVIUl-LnU7I_/pub?w=500&h=250)
+![Picture of just two solutions](./imgs/two_solutions.png)
 
 With two parents, you need to make a child solution.  This process is called [crossover](https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm).
 Your child solution should be some combination of the parents.  There are [lots](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_crossover.htm) of ways to do this.
 
-![Picture of combined solution](https://docs.google.com/drawings/d/e/2PACX-1vT128MYP3oK2lh3whfkuhrGqX-cYSCex9Qf1WsfC6P7vbFFSNgpea5jaAZ5xhHwjfrsMdKzwPK7acXB/pub?w=856&h=470)
+![Picture of combined solution](./imgs/child_solution.png)
 
 Finally you want to [mutate](https://en.wikipedia.org/wiki/Mutation_(genetic_algorithm)) your solution.  Mutation lets you
 stumble upon great solutions.  Just like for animals, mutation should be rare and may not even happen for all children.
 
-![Picture of mutated solution](https://docs.google.com/drawings/d/e/2PACX-1vQgJV-dNsAZDJcsK6iS6bHZqsCoe9vbFRWiqc7ylhgFfn8OxsTywCQi7HtX4-HkFWdOriEkpJDHYpNE/pub?w=347&h=423)
+![Picture of mutated solution](./imgs/mutated_child.png)
 
 Repeat this process a bunch of times until you have a new population.
 
-![Picture of mutated combined population](https://docs.google.com/drawings/d/e/2PACX-1vSPXvPSFFtkgZuDlIFn4XxsFvVudFZ0jDehzE7ubljvWWo0MMRsKEj5wPYhOblha5urz4Vsom6hY_z1/pub?w=991&h=652)
+![Picture of mutated combined population](./imgs/second_population.png)
 
 The number of solutions to your problem has now grown.  You need to kill off solutions to keep your population in check.
 How you do this is called [survivor selection](https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)).  Maybe you
 kill off the older solutions or make the solutions fight to the death with each other.
 
-![Picture of surviving population](https://docs.google.com/drawings/d/e/2PACX-1vR69DqYZPVZztSrMUHf_bjjHOSxUHaxwxozIXiFcnkZx2Zu3OYd9I5StuTGCZvqg46kObpZjFP5-Xr2/pub?w=991&h=652)
+![Picture of surviving population](./imgs/surviving_population.png)
 
 At this point you should have a population of solutions that is slightly better than your previous solutions.  It's some
 combination of how you started, with a bit of mutation.  Repeat this process as much as you want.  When you decide
 to stop is called your [termination condition](https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_termination_condition.htm).
 
-![Picture of ending solutions](https://docs.google.com/drawings/d/e/2PACX-1vQkhf0xKKitzBDE8NeTkGX0KW6022NZJ88PONT5Zy8nOAtwtc1UkNEgw6a65_8yc9YKsL96L04i4uQL/pub?w=352&h=349)
+![Picture of ending solutions](./imgs/best_solution.png)
 
 When you stop, you find the best solution left and that's the evolved answer to your problem.  The field of genetic algorithms
 and machine learning is way deeper than few paragraphs, but I hope this gives you a general sense of how it works.
@@ -82,7 +82,7 @@ or solutions on large datasets that have quadratic optimal solutions (even a mil
 Genetic algorithms also work well when analyzing something that you're either not allowed to reverse engineer, like a [black box](https://en.wikipedia.org/wiki/Black_box)
 or problems that are [beyond](https://en.wikipedia.org/wiki/Laplace%27s_demon) our [current](https://en.wikipedia.org/wiki/Uncertainty_principle) understanding.
 
-![Picture of blackbox](https://docs.google.com/drawings/d/e/2PACX-1vSRUNakfe-27XxP43Bg-Ip5Egz1AwEp4mfqyNKtLenpm6ji1SXO2MKTwDoDkLn0RZOaGTPkSRdeU4Tj/pub?w=960&h=720)
+![Picture of blackbox](./imgs/blackbox.png)
 
 The final aspect that allows genetic algorithms to work well are good crossover and mutation algorithms.
 * Crossover: A reasonable way to combine two different solutions
@@ -96,7 +96,7 @@ isn't too long and is worth a read.  The implementation is a combination of
 * [Shellsort](https://en.wikipedia.org/wiki/Shellsort) when the list or segment size is small
 * [Heapsort](https://en.wikipedia.org/wiki/Heapsort) if quicksort recurses too much
 
-![Picture of go sort flow charts](https://docs.google.com/drawings/d/e/2PACX-1vTo9Dy3OFS52YMjDtDwCUj0R1c5csKkYhvJZCNzR59T8iynm5qbDNlNMinju_ZsWibAU47Oai6ZKLUU/pub?w=633&h=525)
+![Picture of go sort flow charts](./imgs/sorting_flowchart.png)
 
 There exist [antiquicksort](https://www.cs.dartmouth.edu/~doug/mdmspe.pdf) algorithms to find worse case quicksort inputs,
 and the go sort tests [use them](https://github.com/golang/go/blob/go1.12.5/src/sort/sort_test.go#L458).  It's not
@@ -109,7 +109,7 @@ let's define genetic algorithm terms in the context of finding a worse case sort
 
 A chromosome is a list of numbers to be sorted.  For example, `[1, 6, 3, 4, 5, 2]`.
 
-![Picture of array of numbers](https://docs.google.com/drawings/d/e/2PACX-1vTxAAvsmR1YznD8gDIdzr0JldPoBZrQj1GjyRyZoaWzEeMCHJ2QAPyZraslfRX_Eacr89rfnW3Wkcg0/pub?w=355&h=106)
+![Picture of array of numbers](./imgs/array_of_numbers.png)
 
 ## Fitness
 
@@ -120,7 +120,7 @@ In the example case, `[1, 6, 3, 4, 5, 2]` is sorted in 12 comparisons by Go, so 
     https://play.golang.org/p/6ekegNhrNvg
 -->
 
-![Picture of array of with score below](https://docs.google.com/drawings/d/e/2PACX-1vQoIWl9g0YmAVnqCxrK-wR2_wwF7HVUEYpgd4-LgBPP0_lWTaOkdCEocZWuX0SOgo4wAy-KbdYTbMsD/pub?w=355&h=106)
+![Picture of array of with score below](./imgs/array_of_numbers_fitness.png)
 
 ## Parent selection
 
@@ -143,7 +143,7 @@ array `[1, 6, 3, 5, 2, 1]`.
     https://play.golang.org/p/2itbh_ysV1o
 -->
 
-![Picture of array crossover](https://docs.google.com/drawings/d/e/2PACX-1vS_n1M-6mVGKyo11gnBoDnr-JCv8txOgO5onnkXa3Uc7LkiE4takqqPHzX5yDwp3_kM0HDVLdOTZXsw/pub?w=727&h=272)
+![Picture of array crossover](./imgs/array_number_crossover.png)
 
 ## Mutate
 
@@ -151,7 +151,7 @@ For mutate, we'll just randomly change an index in the array.  We can do this wi
 over time as we fail to improve our fitness.  For example, the array `[6, 4, 3, 5, 2, 1]` may mutate to `[6, 4, 3, 5, 10, 1]`
 by changing the 2 to 10.
 
-![Picture of array with single value changed](https://docs.google.com/drawings/d/e/2PACX-1vRNo8s4WHCdFeRFNph5qTQBw1A_xMOpg7B4VlOAnbcjaSSU0_kYgyyNs48pWYrzr91xeoMOqs-S1h6A/pub?w=360&h=266)
+![Picture of array with single value changed](./imgs/array_number_mutation.png)
 
 # Architecting a genetic algorithm in Go
 
@@ -170,7 +170,7 @@ Your [genetic algorithm](https://github.com/cep21/geneticsort/blob/master/geneti
 run with injections for each genetic algorithm concept.  This process is
 called [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
 
-![Picture of package layout](https://docs.google.com/drawings/d/e/2PACX-1vT98Y4GBfva4soz0WITWbOalH5dKTLqOuHZjQmwXmyYxdyP0OOy9JUhpl2Kt_E_FVaNSTwgZAgsFcUu/pub?w=650&h=317)
+![Picture of package layout](./imgs/package_layout.png)
 
 ## Configuration
 
@@ -183,7 +183,7 @@ Genetic algorithms are very parallelizable.  When you're calculating the fitness
 multiple [goroutines](https://tour.golang.org/concurrency/1) by passing each individual to a channel and processing
 the channel in parallel.
 
-![Picture of goroutine order](https://docs.google.com/drawings/d/e/2PACX-1vQGvGOTNT3ON7_4P7jmD8Xol8bgwK1BEmGBCylMq60HhuM1r51wT_fyzFmIiI-bYwM8pwq_83EFmzuf/pub?w=737&h=601)
+![Picture of goroutine order](./imgs/spawned_children.png)
 
 ```go
 	var wg sync.WaitGroup
@@ -208,7 +208,7 @@ We can select children for the next generation in a similarly parallel way.  How
 aggregate all the children.  We could pass children **back** to the main goroutine, but instead let's take a
 shortcut and just operate on indexes in an array.
 
-![Picture of index goroutines](https://docs.google.com/drawings/d/e/2PACX-1vSCPMva55eFDRnltJu5f3sGqhlow-cxEQvbcGhGSFBN9c8__smmHRnmF7pWsqEIzJblM8L8bprp61Dx/pub?w=799&h=423)
+![Picture of index goroutines](./imgs/spawned_indexes.png)
 
 ```go
 	var wg sync.WaitGroup
@@ -238,7 +238,7 @@ Genetic algorithms require random number generation.  This can cause problems wh
 because random number generators are almost never thread safe.  Thread safety is forced onto them with locks or
 [mutexes](mutexes-wikipedia).
 
-![Picture of locked rand usage](https://docs.google.com/drawings/d/e/2PACX-1vSZBYTOXx52OtR8g0CeHlU9ViZ-S_QTM-Gpu4XJzgmX3F-M7G5scnA4d_Il6BaIwL4SfzmBZcNrLt8d/pub?w=1071&h=551)
+![Picture of locked rand usage](./imgs/locked_rand.png)
 
 If you use Go's built in [rand](rand) package's random number generators you'll notice they use a `globalRand`
 singleton.
@@ -273,7 +273,7 @@ Ideally we would be able to not require locking when we need random number gener
 a different random number generator for each `index` of a member of our population, or one for each goroutine we want
 to run in parallel.
 
-![Picture of distributed rand](https://docs.google.com/drawings/d/e/2PACX-1vR_WuzhpdCT1PAUIWSL3SKMxUzy5Ia0q9YK7olkNZwlPmnqZPqPaiX8Aw_OrY0oXkNs3Jp1qRRIYODn/pub?w=1141&h=438)
+![Picture of distributed rand](./imgs/rand_indexes.png)
 
 ```go
 
@@ -304,7 +304,7 @@ and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.
 
 ## Creating a Docker container of your Go program
 
-![Picture of Gopher inside docker icon](https://docs.google.com/drawings/d/e/2PACX-1vSgOnexNdv_cbhfocObCl8x-qpOz2qD0MIHIGE21SS4ogoOaCqYazNQdcvmzrN3H7p4vm2eUgjdnRis/pub?w=441&h=285)
+![Picture of Gopher inside docker icon](./imgs/docker_gopher.png)
 
 The first part of batch is turning our Go program into a [docker](https://www.docker.com/resources/what-container) container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492)
 than it should be, but there exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.  Here are a few that give
@@ -368,7 +368,7 @@ Each vCPU, except for T2 instances, is a [thread in a CPU core](https://docs.aws
 and N of these should let us run N concurrent threads of logic.  We ideally shouldn't care if we get one beefy computer
 running 64 concurrent threads, or 8 medium size computers running 8 concurrent threads.
 
-![Picture of two vCPU setups](https://docs.google.com/drawings/d/e/2PACX-1vSsG2AijieIue3IAYzXJAhyzy8ZEiekgReaS1izez1cL-fUzXwrA-j9bRx9HCnu3-ousu4LTP9-FZ4L/pub?w=1105&h=714)
+![Picture of two vCPU setups](./imgs/vcpu_setups.png)
 
 Another important part is setting [MinvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-minvcpus) and
 [DesiredvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-desiredvcpus)
@@ -436,7 +436,7 @@ on the secondary index of a solution family sorted by fitness.
 ### Configuration for Batch that tells it what to run and how to run it
 
 <!-- From https://aws.amazon.com/blogs/compute/using-aws-cloudformation-to-create-and-manage-aws-batch-resources/ -->
-![Batch environment](https://d2908q01vomqb2.cloudfront.net/1b6453892473a467d07372d45eb05abc2031647a/2018/04/23/AWSBatchresoucreinteract-diagram.png)
+![Batch environment](./imgs/batch_diagram.png)
 
 
 ```yaml
