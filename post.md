@@ -488,7 +488,7 @@ role and allow ec2 to use that role (inside AssumeRolePolicyDocument for EcsInst
 The last part is a role for our job itself, allowing it to write to our DynamoDB table.  This is inside the "JobRole".
 We allow ecs to assume this role, since ECS will be running our tasks.
 
-![Picture of permissions](https://docs.google.com/drawings/d/e/2PACX-1vQIUdFb_mawOrhRNW-w3wEjxr3VNqNf1-_v2SPEocgaOxhkGqO66X-YI42BtjUor_7HY7ikIyWOjkO3/pub?w=677&h=326)
+![Picture of permissions](./imgs/genetic_permissions.png)
 
 ```yaml
   BatchServiceRole:
