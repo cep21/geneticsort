@@ -435,6 +435,9 @@ on the secondary index of a solution family sorted by fitness.
 
 ### Configuration for Batch that tells it what to run and how to run it
 
+The only batch configuration is the job itself and a queue to place the job in.  The environment configuration for our
+job is only the defaults.  We can overwrite any of this when we run the job itself.
+
 <!-- From https://aws.amazon.com/blogs/compute/using-aws-cloudformation-to-create-and-manage-aws-batch-resources/ -->
 ![Batch environment](./imgs/batch_diagram.png)
 
