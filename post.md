@@ -2,7 +2,7 @@
 
 ![Picture gopher DNA batch](https://cep21.github.io/geneticsort/imgs/gopher_batch_dna.png)
 
-This post will give a walk thru of the following concepts:
+This talk will give a walk thru of the following concepts:
 
 * What are genetic algorithms
 * Applying genetic algorithms to black box inputs, with sorting as an example
@@ -18,7 +18,7 @@ AWS and Go. Check out and run the code yourself [here](https://github.com/cep21/
 There exist really good resources online already that describe in detail how genetic algorithms work.
 The two I've found most useful are [tutorial point](https://www.tutorialspoint.com/genetic_algorithms/index.htm) and
 [wikipedia](https://en.wikipedia.org/wiki/Genetic_algorithm).  My summary here is only the bare bones of genetic
-algorithms, since the original parts of the post are focused on how to code and deploy them.
+algorithms, since the original parts of the talk are focused on how to code and deploy them.
 
 ## Basics of genetic algorithms
 
@@ -86,13 +86,15 @@ or problems that are [not yet](https://en.wikipedia.org/wiki/Laplace%27s_demon) 
 ![Picture of blackbox](https://cep21.github.io/geneticsort/imgs/blackbox.png)
 
 The final aspects that allows genetic algorithms to work well are good crossover and mutation algorithms.
+
 * Crossover: A reasonable way to combine two different solutions
 * Mutation: Most small changes to the solution should produce small changes in results
 
 # Applying genetic algorithms to sorting inputs
 
 Go's sort documentation is [short](https://golang.org/pkg/sort/#Sort) and the [code](https://github.com/golang/go/blob/go1.12.5/src/sort/sort.go#L183)
-isn't too long and is worth a read.  The implementation is a combination of
+isn't too long and is worth a read.  The implementation is a combination of:
+
 * [Quicksort](https://en.wikipedia.org/wiki/Quicksort) in the normal case with [ninther](https://www.johndcook.com/blog/2009/06/23/tukey-median-ninther/) for median selection
 * [Shellsort](https://en.wikipedia.org/wiki/Shellsort) when the list or segment size is small
 * [Heapsort](https://en.wikipedia.org/wiki/Heapsort) if quicksort recurses too much
@@ -191,24 +193,22 @@ the channel in parallel.
 
 ![Picture of goroutine order](https://cep21.github.io/geneticsort/imgs/spawned_children.png)
 
-```go
-var wg sync.WaitGroup
-wg.Add(numGoroutine)
-individuals := make(chan Chromosome)
-for i := 0; i < numGoroutine; i++ {
-	go func() {
-		defer wg.Done()
-		for individual := range individuals {
-			individual.Fitness()
-		}
-	}()
-}
-for i := 0; i < len(p.Individuals); i++ {
-	individuals <- p.Individuals[i]
-}
-close(individuals)
-wg.Wait()
-```
+    var wg sync.WaitGroup
+    wg.Add(numGoroutine)
+    individuals := make(chan Chromosome)
+    for i := 0; i < numGoroutine; i++ {
+        go func() {
+            defer wg.Done()
+            for individual := range individuals {
+                individual.Fitness()
+            }
+        }()
+    }
+    for i := 0; i < len(p.Individuals); i++ {
+        individuals <- p.Individuals[i]
+    }
+    close(individuals)
+    wg.Wait()
 
 We can select children for the next generation in a similarly parallel way.  However in this case we want to
 aggregate all the children.  We could pass children **back** to the main goroutine, but instead let's take a
@@ -216,24 +216,23 @@ shortcut and just operate on indexes in an array.
 
 ![Picture of index goroutines](https://cep21.github.io/geneticsort/imgs/spawned_indexes.png)
 
-```go
-var wg sync.WaitGroup
-wg.Add(numGoroutine)
-idxChan := make(chan int)
-for i := 0; i < numGoroutine; i++ {
-	go func() {
-		defer wg.Done()
-		for idx := range idxChan {
-			ret.Individuals[idx] = p.singleNextGenerationIteration(ps, b, m, numP, rnd.Rand(idx))
-		}
-	}()
-}
-for i := 0; i < len(p.Individuals)-1; i++ {
-	idxChan <- i
-}
-close(idxChan)
-wg.Wait()
-```
+
+    var wg sync.WaitGroup
+    wg.Add(numGoroutine)
+    idxChan := make(chan int)
+    for i := 0; i < numGoroutine; i++ {
+        go func() {
+            defer wg.Done()
+            for idx := range idxChan {
+                ret.Individuals[idx] = p.singleNextGenerationIteration(ps, b, m, numP, rnd.Rand(idx))
+            }
+        }()
+    }
+    for i := 0; i < len(p.Individuals)-1; i++ {
+        idxChan <- i
+    }
+    close(idxChan)
+    wg.Wait()
 
 Notice how there is no need for the spawned goroutines to pass the individual the calculate back to the main
 goroutine, and no locks are needed. Instead, they inject the individual they create into the array.
@@ -249,30 +248,26 @@ because random number generators are almost never thread safe.  Thread safety is
 If you use Go's built in [rand](rand) package's random number generators you'll notice they use a `globalRand`
 singleton.
 
-```go
-func Int31() int32 { return globalRand.Int31() }
-```
+
+    func Int31() int32 { return globalRand.Int31() }
 
 This global rand singleton is built with a `lockedSource` implementation.
 
-```go
-var globalRand = New(&lockedSource{src: NewSource(1).(Source64)})
-```
+    var globalRand = New(&lockedSource{src: NewSource(1).(Source64)})
 
 The locked source protects randomness with a mutex
-```go
-type lockedSource struct {
-	lk  sync.Mutex
-	src Source64
-}
 
-func (r *lockedSource) Int63() (n int64) {
-	r.lk.Lock()
-	n = r.src.Int63()
-	r.lk.Unlock()
-	return
-}
-```
+    type lockedSource struct {
+        lk  sync.Mutex
+        src Source64
+    }
+    
+    func (r *lockedSource) Int63() (n int64) {
+        r.lk.Lock()
+        n = r.src.Int63()
+        r.lk.Unlock()
+        return
+    }
 
 In mostly numeric applications this [mutex contention](https://preshing.com/20111118/locks-arent-slow-lock-contention-is/) can cause real delays in processing.
 Ideally we would be able to not require locking when we need random number generation.  We can achieve this by using
@@ -281,25 +276,22 @@ to run in parallel.
 
 ![Picture of distributed rand](https://cep21.github.io/geneticsort/imgs/rand_indexes.png)
 
-```go
 
-type arrayRandForIdx struct {
-	rands []Rand
-}
-
-func (a *arrayRandForIdx) Rand(idx int) Rand {
-	return a.rands[idx]
-}
-```
+    type arrayRandForIdx struct {
+        rands []Rand
+    }
+    
+    func (a *arrayRandForIdx) Rand(idx int) Rand {
+        return a.rands[idx]
+    }
 
 Rather than relying on the global random number generator, we can inject the random generator
 into our functions that need randomness, like mutation.
 
-```go
-type Mutation interface {
-	Mutate(in Chromosome, r Rand) Chromosome
-}
-```
+
+    type Mutation interface {
+        Mutate(in Chromosome, r Rand) Chromosome
+    }
 
 This allows us to use lockless random numbers.
 
@@ -315,7 +307,8 @@ and inexpensive way to run it at a large scale.  [AWS Batch](https://aws.amazon.
 The first part of Batch is turning our Go program into a [docker](https://www.docker.com/resources/what-container)
 container.  This is way more of a [dark art](https://github.com/golang/go/issues/26492) than it should be, but there
 exist [some good resources](https://www.google.com/search?q=docker+go+app&oq=docker+go+app) out there for this.
-Here are a few that give good advice: feel free to copy from any of this
+Here are a few that give good advice: feel free to copy from any of this:
+
 * [Create the smallest and secured golang docker image based on scratch](https://medium.com/@chemidy/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324)
 * [How to Dockerize your Go (golang) App](https://medium.com/travis-on-docker/how-to-dockerize-your-go-golang-app-542af15c27a2) 
 
@@ -328,6 +321,7 @@ AWS are [cloudformation](https://aws.amazon.com/cloudformation/) and [terraform]
 great solutions: for this project I picked cloudformation.
 
 The basic AWS components we will need are:
+
 * Networking glue that lets computers talk to things
 * Place to put our genetic algorithm
 * Place to run our genetic algorithm
@@ -362,10 +356,10 @@ An overly simplistic summary of the resources we're creating in our stack are
 [ECR](https://aws.amazon.com/ecr/) is an AWS managed place to store Docker containers and the configuration for it
 is very basic.
 
-```yaml
-  ECRRepository:
-    Type: AWS::ECR::Repository
-```
+
+      ECRRepository:
+        Type: AWS::ECR::Repository
+
 
 ### Place to run our genetic algorithm
 
@@ -381,25 +375,25 @@ Another important part is setting [MinvCpus](https://docs.aws.amazon.com/AWSClou
 [DesiredvCpus](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-batch-computeenvironment-computeresources.html#cfn-batch-computeenvironment-computeresources-desiredvcpus)
 to 0.  This lets our environment shut itself down ($$$) when we're not using it.
 
-```yaml
-  ComputeEnvironment:
-    Type: AWS::Batch::ComputeEnvironment
-    Properties:
-      Type: MANAGED
-      ComputeResources:
-        Type: EC2
-        MinvCpus: 0
-        DesiredvCpus: 0
-        MaxvCpus: 64
-        InstanceTypes:
-          - optimal
-        Subnets:
-          - !Ref Subnet
-        SecurityGroupIds:
-          - !Ref SecurityGroup
-        InstanceRole: !Ref IamInstanceProfile
-      ServiceRole: !Ref BatchServiceRole
-```
+
+      ComputeEnvironment:
+        Type: AWS::Batch::ComputeEnvironment
+        Properties:
+          Type: MANAGED
+          ComputeResources:
+            Type: EC2
+            MinvCpus: 0
+            DesiredvCpus: 0
+            MaxvCpus: 64
+            InstanceTypes:
+              - optimal
+            Subnets:
+              - !Ref Subnet
+            SecurityGroupIds:
+              - !Ref SecurityGroup
+            InstanceRole: !Ref IamInstanceProfile
+          ServiceRole: !Ref BatchServiceRole
+
 
 ### Place to store results of our genetic algorithm
 
@@ -413,32 +407,30 @@ is enough: with properties about the run.  To quickly get the best (or worse) so
 of the solution, allowing us to [query](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html)
 on the secondary index of a solution family sorted by fitness.
 
-```yaml
-  DynamoTable2:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    Properties:
-      GlobalSecondaryIndexes:
-        - IndexName: by_fitness
-          KeySchema:
+      DynamoTable2:
+        Type: AWS::DynamoDB::Table
+        DeletionPolicy: Delete
+        Properties:
+          GlobalSecondaryIndexes:
+            - IndexName: by_fitness
+              KeySchema:
+                - AttributeName: family
+                  KeyType: HASH
+                - AttributeName: fitness
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+          AttributeDefinitions:
+            - AttributeName: key
+              AttributeType: S
             - AttributeName: family
-              KeyType: HASH
+              AttributeType: S
             - AttributeName: fitness
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: key
-          AttributeType: S
-        - AttributeName: family
-          AttributeType: S
-        - AttributeName: fitness
-          AttributeType: N
-      KeySchema:
-        - AttributeName: key
-          KeyType: HASH
-```
+              AttributeType: N
+          KeySchema:
+            - AttributeName: key
+              KeyType: HASH
 
 ### Configuration for Batch that tells it what to run and how to run it
 
@@ -449,29 +441,27 @@ job is only the defaults.  We can overwrite any of this when we run the job itse
 ![Batch environment](https://cep21.github.io/geneticsort/imgs/batch_diagram.png)
 
 
-```yaml
-  JobDefinition:
-    Type: AWS::Batch::JobDefinition
-    Properties:
-      Type: container
-      ContainerProperties:
-        Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
-        Vcpus: 4
-        Memory: 2000
-        Environment:
-          - Name: DYNAMODB_TABLE
-            Value: !Ref DynamoTable2
-          - Name: AWS_REGION
-            Value: !Sub ${AWS::Region}
-
-  JobQueue:
-    Type: AWS::Batch::JobQueue
-    Properties:
-      Priority: 1
-      ComputeEnvironmentOrder:
-        - Order: 1
-          ComputeEnvironment: !Ref ComputeEnvironment
-```
+      JobDefinition:
+        Type: AWS::Batch::JobDefinition
+        Properties:
+          Type: container
+          ContainerProperties:
+            Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
+            Vcpus: 4
+            Memory: 2000
+            Environment:
+              - Name: DYNAMODB_TABLE
+                Value: !Ref DynamoTable2
+              - Name: AWS_REGION
+                Value: !Sub ${AWS::Region}
+    
+      JobQueue:
+        Type: AWS::Batch::JobQueue
+        Properties:
+          Priority: 1
+          ComputeEnvironmentOrder:
+            - Order: 1
+              ComputeEnvironment: !Ref ComputeEnvironment
 
 ### AWS Permissions to allow things
 
@@ -482,6 +472,7 @@ you had written the service yourself.
 
 So think about what things you would need to do if you wrote AWS Batch yourself.  A few of the things you would
 want it to do are:
+
 * Scale up and down instances in an [Auto scaling group](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html)
 * [Start](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_StartTask.html) or stop ECS tasks
 * [Cloudwatch Logs](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html) permissions to log application output
@@ -500,63 +491,61 @@ We allow ecs to assume this role, since ECS will be running our tasks.
 
 ![Picture of permissions](https://cep21.github.io/geneticsort/imgs/genetic_permissions.png)
 
-```yaml
-  BatchServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - batch.amazonaws.com
-            Action:
-              - sts:AssumeRole
-
-  IamInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        - !Ref EcsInstanceRole
-
-  EcsInstanceRole:
-    Type: AWS::IAM::Role
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - sts:AssumeRole
-
-  JobRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Policies:
-        - PolicyName: dynamo-put-results
-          PolicyDocument:
+      BatchServiceRole:
+        Type: AWS::IAM::Role
+        Properties:
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+          AssumeRolePolicyDocument:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
-                Action: ["dynamodb:PutItem"]
-                Resource: !GetAtt [DynamoTable2, Arn]
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-            Action:
-              - sts:AssumeRole
-```
+                Principal:
+                  Service:
+                    - batch.amazonaws.com
+                Action:
+                  - sts:AssumeRole
+    
+      IamInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+          Roles:
+            - !Ref EcsInstanceRole
+    
+      EcsInstanceRole:
+        Type: AWS::IAM::Role
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+          AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Principal:
+                  Service:
+                    - ec2.amazonaws.com
+                Action:
+                  - sts:AssumeRole
+    
+      JobRole:
+        Type: AWS::IAM::Role
+        Properties:
+          Policies:
+            - PolicyName: dynamo-put-results
+              PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Action: ["dynamodb:PutItem"]
+                    Resource: !GetAtt [DynamoTable2, Arn]
+          AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Principal:
+                  Service:
+                    - ecs-tasks.amazonaws.com
+                Action:
+                  - sts:AssumeRole
 
 ## Running the job
 
@@ -566,51 +555,45 @@ we want to run!
 
 We can use the CLI to also parse out the name of the job from the CloudFormation output.
 
-```bash
-STACK_NAME=genetic-sort-stack
-function stack_output() {
-  # Used from https://stackoverflow.com/questions/41628487/getting-outputs-from-aws-cloudformation-describe-stacks
-  local RES=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" --output text)
-  if [[ -z ${RES} ]]; then
-    exit 1
-  fi
-  echo ${RES}
-}
-```
+    STACK_NAME=genetic-sort-stack
+    function stack_output() {
+      # Used from https://stackoverflow.com/questions/41628487/getting-outputs-from-aws-cloudformation-describe-stacks
+      local RES=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" --output text)
+      if [[ -z ${RES} ]]; then
+        exit 1
+      fi
+      echo ${RES}
+    }
 
 The important part here is the `--query`.  This uses [JMESPath](http://jmespath.org/) to parse the JSON return of the
 CLI call.  I strongly recommend learning the aws CLI's JMESPath syntax if you want to quickly hack.  With a way
 to get the job's name out, we can now run the job from the CLI.
 
-```bash
-export NUM_JOBS=${NUM_JOBS-2}
-export JOB_RUN_TIME=${JOB_RUN_TIME-1m}
-export ARRAY_SIZE=${ARRAY_SIZE-1000}
-
-function run_job() {
-    aws batch submit-job --job-name geneticsort \
-        --job-queue $(stack_output JobQueue) \
-        --job-definition $(stack_output JobDefinition) \
-        --array-properties "size=${NUM_JOBS}" \
-        --container-overrides "environment=[{name=ARRAY_SIZE,value=${ARRAY_SIZE}},{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}}]"
-}
-```
+    export NUM_JOBS=${NUM_JOBS-2}
+    export JOB_RUN_TIME=${JOB_RUN_TIME-1m}
+    export ARRAY_SIZE=${ARRAY_SIZE-1000}
+    
+    function run_job() {
+        aws batch submit-job --job-name geneticsort \
+            --job-queue $(stack_output JobQueue) \
+            --job-definition $(stack_output JobDefinition) \
+            --array-properties "size=${NUM_JOBS}" \
+            --container-overrides "environment=[{name=ARRAY_SIZE,value=${ARRAY_SIZE}},{name=RAND_SEED,value=-1},{name=RUN_TIME,value=${JOB_RUN_TIME}}]"
+    }
 
 ## Try it out from the CLI.
 
 If you have the AWS CLI setup correctly, and go installed, you should be able to run `./make.sh everything` to see it
 all happen!
 
-```bash
-> NUM_JOBS=20 JOB_RUN_TIME=1h AWS_REGION=us-west-2 AWS_PROFILE=my-profile ./make.sh everything
-...
-...
-...
-{
-    "jobName": "geneticsort",
-    "jobId": "7a1431a0-32ef-4f2d-91bd-b0769e979d46"
-}
-```
+    > NUM_JOBS=20 JOB_RUN_TIME=1h AWS_REGION=us-west-2 AWS_PROFILE=my-profile ./make.sh everything
+    ...
+    ...
+    ...
+    {
+        "jobName": "geneticsort",
+        "jobId": "7a1431a0-32ef-4f2d-91bd-b0769e979d46"
+    }
 
 We can see batch running our job in the UI for batch.
 
