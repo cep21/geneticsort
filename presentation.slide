@@ -3,11 +3,16 @@ Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
 Jack Lindamood
 cep221@gmail.com
 
-* Contents
+* Goal
+- Rudimentary introduction to genetic algorithms
+- Inspire you to write and code your own on AWS
 
-- Overview of genetic algorithms
-- Applying a genetic algorithm in Go
-- Running a genetic algorithm in AWS
+* Where I began
+
+.image ./imgs/sortdoc.png
+
+Question:
+- Given a black box API, how do you discover the slowest possible input?
 
 * Genetic algorithm 101
 
@@ -23,10 +28,6 @@ cep221@gmail.com
 
 .image ./imgs/population_fitness.png
 
-* Parent Selection
-
-.image ./imgs/two_solutions.png
-
 * Crossover
 
 .image ./imgs/child_solution.png
@@ -41,7 +42,7 @@ cep221@gmail.com
 
 * Survivor Selection
 
-.image ./imgs/surviving_population.png
+.image ./imgs/second_population_survivors.png
 
 * Termination Condition
 
@@ -83,13 +84,16 @@ cep221@gmail.com
 
 .code ./genetic/population.go /START PLAY1OMIT/,/END PLAY1OMIT/ HL1
 
+* Goroutine parallelism for next population (method 1)
+.image ./imgs/spawn_send_back.png 500 _
+
+* Goroutine parallelism for next population (method 2)
+
+.image ./imgs/spawned_indexes.png
+
 * Goroutine parallelism for next population
 
 .code ./genetic/population.go /START PLAY2OMIT/,/END PLAY2OMIT/ HL1
-
-* Goroutine parallelism for next population (picture)
-
-.image ./imgs/spawned_indexes.png
 
 * Randomness in Genetic algorithms (code)
 
@@ -145,11 +149,6 @@ Pass Rand along call stack
 - *SubnetRouteTableAssociation*: Glue the route table to the subnet
 - *SecurityGroup*: A firewall.
 
-* Place to put the container - ECR
-
-      ECRRepository:
-        Type: AWS::ECR::Repository
-
 * Understanding instance types and vCPU
 
   Each vCPU is a thread of a CPU core, except for T2 instances.
@@ -168,67 +167,12 @@ Pass Rand along call stack
 
 MinvCpus:0 allows cluster to scale entirely down
 
-      ComputeEnvironment:
-        Type: AWS::Batch::ComputeEnvironment
-        Properties:
-          Type: MANAGED
-          ComputeResources:
-            Type: EC2
-            MinvCpus: 0
-            DesiredvCpus: 0
-            MaxvCpus: 64
-            InstanceTypes:
-              - optimal
-            Subnets:
-              - !Ref Subnet
-            SecurityGroupIds:
-              - !Ref SecurityGroup
-            InstanceRole: !Ref IamInstanceProfile
-          ServiceRole: !Ref BatchServiceRole
-
-* Place to store results - DynamoDB
-
-      DynamoTable2:
-        Type: AWS::DynamoDB::Table
-        DeletionPolicy: Delete
-        Properties:
-          GlobalSecondaryIndexes:
-            - IndexName: by_fitness
-              KeySchema:
-                - AttributeName: family
-                  KeyType: HASH
-                - AttributeName: fitness
-                  KeyType: RANGE
-              Projection:
-                ProjectionType: ALL
-          BillingMode: PAY_PER_REQUEST
-          AttributeDefinitions:
-            - AttributeName: key
-              AttributeType: S
-            - AttributeName: family
-              AttributeType: S
-            - AttributeName: fitness
-              AttributeType: N
-          KeySchema:
-            - AttributeName: key
-              KeyType: HASH
+.code ./genetic/population.go /START PLAY6OMIT/,/END PLAY6OMIT/
 
 * Configuring Batch jobs
 Reference your CloudFormation resources directly in the environment.  Notice how DynamoTable2 is the name of my above DynamoDB table.
 
-      JobDefinition:
-        Type: AWS::Batch::JobDefinition
-        Properties:
-          Type: container
-          ContainerProperties:
-            Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
-            Vcpus: 4
-            Memory: 2000
-            Environment:
-              - Name: DYNAMODB_TABLE
-                Value: !Ref DynamoTable2
-              - Name: AWS_REGION
-                Value: !Sub ${AWS::Region}
+.code ./genetic/population.go /START PLAY7OMIT/,/END PLAY7OMIT/
 
 * AWS Permissions maze
 .image ./imgs/genetic_permissions.png
@@ -238,7 +182,31 @@ Reference your CloudFormation resources directly in the environment.  Notice how
 Learn the AWS-CLI
 Makes it easy to quickly script and start jobs
 Power users of aws-cli use JMESPath
-.link JMESPath http://jmespath.org/
+JMESPath is a query language for JSON
+
+.link http://jmespath.org/
+
+* JMESPATH example
+
+- Input
+    {
+      "locations": [
+        {"name": "Seattle", "state": "WA"},
+        {"name": "New York", "state": "NY"},
+        {"name": "Bellevue", "state": "WA"},
+        {"name": "Olympia", "state": "WA"}
+      ]
+    }
+
+- Command
+    locations[?state == 'WA'].name | sort(@) | {WashingtonCities: join(', ', @)}
+
+- Output
+    {
+      "WashingtonCities": "Bellevue, Olympia, Seattle"
+    }
+
+* Using JMESPATH and aws-cli
 
     STACK_NAME=genetic-sort-stack
     function stack_output() {
@@ -251,6 +219,9 @@ Power users of aws-cli use JMESPath
       fi
       echo ${RES}
     }
+    # ...
+    stack_output JobQueue
+    stack_output JobDefinitions
 
 * Running it from the CLI
 

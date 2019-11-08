@@ -61,21 +61,21 @@ func (p *Population) Average() float64 {
 // START PLAY1OMIT
 func (p *Population) calculateFitnessForAll(numGoroutine int) {
 	var wg sync.WaitGroup
-	wg.Add(numGoroutine) // Wait for all goroutines to finish // HL1
+	wg.Add(numGoroutine)
 	individuals := make(chan Chromosome)
 	for i := 0; i < numGoroutine; i++ {
 		go func() {
-			defer wg.Done() // Mark a goroutine as done // HL1
+			defer wg.Done()
 			for individual := range individuals {
 				individual.Fitness()
 			}
 		}()
 	}
 	for i := 0; i < len(p.Individuals); i++ {
-		individuals <- p.Individuals[i]
+		individuals <- p.Individuals[i] // Individual that needs fitness calculation // HL1
 	}
 	close(individuals)
-	wg.Wait()
+	wg.Wait() // Wait for all processing to finish // HL1
 }
 // END PLAY1OMIT
 
@@ -185,7 +185,7 @@ type lockedSource struct {
 
 // lockedSource is a global lock
 func (r *lockedSource) Int63() (n int64) {
-	r.lk.Lock()
+	r.lk.Lock() // <--- A lock // HL
 	n = r.src.Int63()
 	r.lk.Unlock()
 	return
@@ -215,4 +215,39 @@ func (r *lockedSource) Int63() (n int64) {
       Mutate(in Chromosome, r Rand) Chromosome
   }
 // END PLAY5OMIT
+// START PLAY6OMIT
+      ComputeEnvironment:
+        Type: AWS::Batch::ComputeEnvironment
+        Properties:
+          Type: MANAGED
+          ComputeResources:
+            Type: EC2
+            MinvCpus: 0 // HL
+            DesiredvCpus: 0
+            MaxvCpus: 64
+            InstanceTypes:
+              - optimal
+            Subnets:
+              - !Ref Subnet
+            SecurityGroupIds:
+              - !Ref SecurityGroup
+            InstanceRole: !Ref IamInstanceProfile
+          ServiceRole: !Ref BatchServiceRole
+// END PLAY6OMIT
+
+// START PLAY7OMIT
+      JobDefinition:
+        Type: AWS::Batch::JobDefinition
+        Properties:
+          Type: container
+          ContainerProperties:
+            Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
+            Vcpus: 4
+            Memory: 2000
+            Environment:
+              - Name: DYNAMODB_TABLE
+                Value: !Ref DynamoTable2
+              - Name: AWS_REGION
+                Value: !Sub ${AWS::Region}
+// END PLAY7OMIT
  */
