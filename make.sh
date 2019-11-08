@@ -143,6 +143,10 @@ function everything() {
     run_job
 }
 
+function present() {
+    ~/go/bin/present -base ./present_base/ ./presentation.slide
+}
+
 case "${1-}" in
   docker_push)
     docker_push
@@ -173,6 +177,9 @@ case "${1-}" in
     ;;
   everything)
     everything
+    ;;
+  present)
+    present
     ;;
   *)
     echo "Invalid param ${1-}"
