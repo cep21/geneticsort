@@ -18,76 +18,126 @@ Question:
 
 * Chromosome
 
+: A chromosome is a possible solution to your problem.
+
 .image ./imgs/chromosome_picture.png
 
 * Population
+
+: A population is a group of solutions to your problem.
 
 .image ./imgs/population_picture.png
 
 * Fitness
 
+: Fitness function tells you how good a solution is.
+
 .image ./imgs/population_fitness.png
 
 * Crossover
+
+: To make child solutions you need to find a group of parents, combine them, and create a solution that is their combination.
+: Like natural selection, you'll want to bias towards parents with high fitness.
+: Combining the parents is called crossover.
 
 .image ./imgs/child_solution.png
 
 * Mutation
 
+: Mutation lets you stumble into a great solution and out of local maxima.
+: Like natural selection, mutation should be rare.
+
 .image ./imgs/mutated_child.png
 
 * New Population
 
+: Eventually you have a population that is the parents and their children.
 .image ./imgs/second_population.png
 
 * Survivor Selection
+
+: To prevent the population from growing unbounded, make solutions fight with each other until the population is smaller
 
 .image ./imgs/second_population_survivors.png
 
 * Termination Condition
 
+: Eventually stop the process.  Usually when solutions stop getting better or some time has passed.
+: This is called termination condition.
 .image ./imgs/best_solution.png
 
 * Sorting in Go
 
 * Go’s sort algorithm
 
+: You want to use quicksort, because it's really fast
+: Don't bother with quicksort if the input is very small, since the O(1) cost isn't worth using a simpler solution
+: Bail out to a guaranteed O(n lg n) solution if the input seems very bad.
+
 .image ./imgs/sorting_flowchart.png
 
 * Chromosome for Sorting
+
+: A possible solution for sorting is really any array of numbers.
 
 .image ./imgs/array_of_numbers.png
 
 * Fitness for sorting
 
+: The fitness of sorting it is how many swaps take place
+
 .image ./imgs/array_of_numbers_fitness.png
 
 * Crossover for sorting
+
+: Crossover tends to actually work well since it combines hard to sort sub sections
 
 .image ./imgs/array_number_crossover.png
 
 * Mutation for sorting
 
+: Mutation could be a swap or direct element modification
+
 .image ./imgs/array_number_mutation.png
 
 * Architecting a genetic algorithm in go
 
+: We have a chromosome, fitness function, crossover function, and mutation function.
+: All the base components for a genetic algorithm.
+
 * Code Layout
+
+: Base components of genetic algorithms belong in their own package
+: Implementations for specific populations can go in their own subdirectory.
 
 .image ./imgs/package_layout.png
 
 * Goroutine parallelism
 
+: Machine learning tends to be very parallelizable.
+: Main thing to watch for is lock contention
+
 .image ./imgs/spawned_children.png
 
 * Goroutine parallelism for fitness
 
+: Most common case of parallelism.  Feed Individuals to a channel and have goroutines pull them and calculate fitness
+
 .code ./genetic/population.go /START PLAY1OMIT/,/END PLAY1OMIT/ HL1
 
 * Goroutine parallelism for next population (method 1)
+
+: Now think about how we make children solutions for the next phase of our genetic algorithm
+: We need to make N (let's say 100) children solutions.  One way is to add 100 "work" messages into a queue, do work 100 times across goroutines, and feed the result back into a channel that we pull from 100 times
+: There bottlenecks at both feeding in the idea of "work" 100 times and the idea of pulling "answers" 100 times
+
 .image ./imgs/spawn_send_back.png 500 _
 
 * Goroutine parallelism for next population (method 2)
+
+: Another idea is to preallocate an array of 100 size
+: Rather than pass in the idea of "work", pass in an index into the array.
+: Answers can be directly inserted into the results array without a second lock
 
 .image ./imgs/spawned_indexes.png
 
@@ -97,13 +147,22 @@ Question:
 
 * Randomness in Genetic algorithms (code)
 
+: Machine learning often requires random numbers
+: In highly goroutined code, this can create locks
+
 .code ./genetic/population.go /START PLAY3OMIT/,/END PLAY3OMIT/
 
 * Randomness in Genetic algorithms (flow)
 
+: If you have 4 goroutines asking for a random number at the same time, you'll run into lock contention
+
 .image ./imgs/locked_rand.png
 
 * Working around globally locked mutex
+
+: Solution is to have a random number generator per goroutine.
+: Go doesn't really have per goroutine variables
+: Can resolve this by injecting the randomness generator into your function signature
 
 Mutex per goroutine
 
@@ -115,20 +174,40 @@ Pass Rand along call stack
 
 * Deploying and running a genetic algorithm at a large scale using AWS Batch and ECS
 
+: Quick overview of using AWS and batch
+
 * Docker container for Go program
+
+: You need a way to get your Go code into AWS.
+: If you're not using Lambda, I strongly recommend using Docker.
+: The world before Docker was a scary place of puppet configs and cron jobs on servers than sometimes worked
 
 .image ./imgs/docker_gopher.png
 
 * Go + docker is a bit of a black art
 
+: Docker and Go isn't obviously easy.
+
 .image ./imgs/darkarts.png _ 600
 
+* Docker and Go (homework)
+Some posts I've found useful.
+
+.link https://medium.com/travis-on-docker/how-to-dockerize-your-go-golang-app-542af15c27a2
+.link https://medium.com/@chemidy/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324
+
+: Don't try to furiously write these down.
+: The slides/presentation will be public afterwards.  Follow these links then if interested.
+
 * Managing infrastructure in AWS - CloudFormation
-- Networking glue that lets computers talk to things
-- Place to put our genetic algorithm
-- Place to run our genetic algorithm
-- Place to store results of our genetic algorithm
-- Configuration for Batch that tells it what to run and how to run it
+- Networking glue that lets computers talk to things (VPC)
+- Place to put our genetic algorithm (ECR)
+- Place to run our genetic algorithm (EC2)
+- Place to store results of our genetic algorithm (DynamoDB)
+- Configuration for Batch that tells it what to run and how to run it (AWS Batch)
+
+: 5 basic components of deploying our code on AWS
+: Network (VPC), place to put the code (ECR), place to run the code (EC2), place to store the results (DynamoDB), configuration (AWS Batch)
 
 * Networking Glue (homework)
 - AWS Networking for Developers
@@ -149,11 +228,20 @@ Pass Rand along call stack
 - *SubnetRouteTableAssociation*: Glue the route table to the subnet
 - *SecurityGroup*: A firewall.
 
+: My best ELI5 for AWS terminology
+: Your VPC is not the internet.  It's your own network.
+: In a huge region, like us-west-2, there may be many network racks or other single points of failure.  These are grouped into individual availability zones.
+
+
 * Understanding instance types and vCPU
 
-  Each vCPU is a thread of a CPU core, except for T2 instances.
+Each vCPU is a thread of a CPU core, except for T2 instances.
 
 .image ./imgs/vcpu_setups.png
+
+: For systems like batch, and many other AWS systems, you ask for abstract things called compute resources or vCPU
+: They are not the same as an actual computer.
+: If you ask batch for 16 vCPU, there are multiple ways you could actually get that.
 
 * Place to run our algorithm (homework)
 
@@ -163,19 +251,36 @@ Pass Rand along call stack
 - Instance optimized CPU
 .link https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html
 
+: As an aside, AWS's built in docs are very in depth and authoritative
+: Understanding the text is a skill, like reading old english shakespeare plays
+: Don't get discouraged, start small, go deep, and experiment
+
 * Place to run our algorithm - EC2
 
 MinvCpus:0 allows cluster to scale entirely down
 
 .code ./genetic/population.go /START PLAY6OMIT/,/END PLAY6OMIT/
 
+: AWS Batch will manage scaling this up and down as jobs come in
+: Scaling to zero can eliminate our costs when we're not using the job queue.
+
 * Configuring Batch jobs
 Reference your CloudFormation resources directly in the environment.  Notice how DynamoTable2 is the name of my above DynamoDB table.
 
 .code ./genetic/population.go /START PLAY7OMIT/,/END PLAY7OMIT/
 
+: The above is sample CloudFormation yaml code
+: CloudFormation will tend to give your resources random names to ensure uniqueness
+: Use references inside your CloudFormation to tie your code to the exact name of your resource
+
 * AWS Permissions maze
 .image ./imgs/genetic_permissions.png
+
+: There are two types of people that setup AWS infrastructure
+: The people that use * for their permissions
+: The people that get confused by AWS permissions
+: Think of AWS Batch as a service you wrote, not a service that Amazon runs for you.
+
 
 * Triggering the job
 
@@ -185,6 +290,12 @@ Power users of aws-cli use JMESPath
 JMESPath is a query language for JSON
 
 .link http://jmespath.org/
+
+: Operational power users love the shell
+: aws-cli is the official-ish way to interact with AWS from the CLI
+: You can do anything you do with the UI, with the AWS CLI
+: As an example, if you open up the Chrome inspector while you're logged into AWS you'll see HTTP commands that are executing API calls to render the UI.  Same commands the AWS CLI can do.
+: I am somewhat confident you could reprodue the AWS UI terminal with the CLI
 
 * JMESPATH example
 
@@ -206,6 +317,10 @@ JMESPath is a query language for JSON
       "WashingtonCities": "Bellevue, Olympia, Seattle"
     }
 
+: The aws-cli spits out JSON
+: JMESPATH is a standard way to parse JSON from the CLI
+: Use it to extract the exact information you need from AWS while inside the terminal
+
 * Using JMESPATH and aws-cli
 
     STACK_NAME=genetic-sort-stack
@@ -222,6 +337,11 @@ JMESPath is a query language for JSON
     # ...
     stack_output JobQueue
     stack_output JobDefinitions
+
+
+: Example code that I used to extract a CloudFormation output from the CLI
+: Again, CloudFormation will tend to give things like your Batch job random names
+: Export it inside your CloudFormation template, then use the CLI to reach into the template's output to get the actual name
 
 * Running it from the CLI
 
@@ -241,10 +361,20 @@ JMESPath is a query language for JSON
                                    ]"
     }
 
+: Once you finally have everything together, you can run your job
+
 * Viewing the job on AWS Batch
 
 .image ./imgs/batch_running_job.png
 
+: Batch will manage spinning up compute resources, distributing my docker container to them, running as many instances as it can, and checking if container exited correctly
+
 * Inspect job output with Cloudwatch Logs
 
 .image ./imgs/job_output.png
+
+: Stdout for each container goes to CloudWatch logs for inspection later.
+
+* Sample code
+
+.link https://github.com/cep21/geneticsort

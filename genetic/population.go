@@ -246,7 +246,7 @@ func (r *lockedSource) Int63() (n int64) {
             Memory: 2000
             Environment:
               - Name: DYNAMODB_TABLE
-                Value: !Ref DynamoTable2
+                Value: !Ref DynamoTable2 // HL
               - Name: AWS_REGION
                 Value: !Sub ${AWS::Region}
 // END PLAY7OMIT
