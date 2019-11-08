@@ -1,5 +1,6 @@
 #!/bin/bash
-set -exuo pipefail
+#set -exuo pipefail
+#set -exu
 
 STACK_NAME=genetic-sort-stack
 STACK_FILE=file://cfstack.yaml
