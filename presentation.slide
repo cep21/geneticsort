@@ -1,0 +1,279 @@
+Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
+
+Jack Lindamood
+cep221@gmail.com
+
+* Contents
+
+- Overview of genetic algorithms
+- Applying a genetic algorithm in Go
+- Running a genetic algorithm in AWS
+
+* Genetic algorithm 101
+
+* Chromosome
+
+.image ./imgs/chromosome_picture.png
+
+* Population
+
+.image ./imgs/population_picture.png
+
+* Fitness
+
+.image ./imgs/population_fitness.png
+
+* Parent Selection
+
+.image ./imgs/two_solutions.png
+
+* Crossover
+
+.image ./imgs/child_solution.png
+
+* Mutation
+
+.image ./imgs/mutated_child.png
+
+* New Population
+
+.image ./imgs/second_population.png
+
+* Survivor Selection
+
+.image ./imgs/surviving_population.png
+
+* Termination Condition
+
+.image ./imgs/best_solution.png
+
+* Sorting in Go
+
+* Go’s sort algorithm
+
+.image ./imgs/sorting_flowchart.png
+
+* Chromosome for Sorting
+
+.image ./imgs/array_of_numbers.png
+
+* Fitness for sorting
+
+.image ./imgs/array_of_numbers_fitness.png
+
+* Crossover for sorting
+
+.image ./imgs/array_number_crossover.png
+
+* Mutation for sorting
+
+.image ./imgs/array_number_mutation.png
+
+* Architecting a genetic algorithm in go
+
+* Code Layout
+
+.image ./imgs/package_layout.png
+
+* Goroutine parallelism
+
+.image ./imgs/spawned_children.png
+
+* Goroutine parallelism for fitness
+
+.code ./genetic/population.go /START PLAY1OMIT/,/END PLAY1OMIT/ HL1
+
+* Goroutine parallelism for next population
+
+.code ./genetic/population.go /START PLAY2OMIT/,/END PLAY2OMIT/ HL1
+
+* Goroutine parallelism for next population (picture)
+
+.image ./imgs/spawned_indexes.png
+
+* Randomness in Genetic algorithms (code)
+
+.code ./genetic/population.go /START PLAY3OMIT/,/END PLAY3OMIT/
+
+* Randomness in Genetic algorithms (flow)
+
+.image ./imgs/locked_rand.png
+
+* Working around globally locked mutex
+
+Mutex per goroutine
+
+.code ./genetic/population.go /START PLAY4OMIT/,/END PLAY4OMIT/
+
+Pass Rand along call stack
+
+.code ./genetic/population.go /START PLAY5OMIT/,/END PLAY5OMIT/
+
+* Deploying and running a genetic algorithm at a large scale using AWS Batch and ECS
+
+* Docker container for Go program
+
+.image ./imgs/docker_gopher.png
+
+* Go + docker is a bit of a black art
+
+.image ./imgs/darkarts.png _ 600
+
+* Managing infrastructure in AWS - CloudFormation
+- Networking glue that lets computers talk to things
+- Place to put our genetic algorithm
+- Place to run our genetic algorithm
+- Place to store results of our genetic algorithm
+- Configuration for Batch that tells it what to run and how to run it
+
+* Networking Glue (homework)
+- AWS Networking for Developers
+.link https://aws.amazon.com/blogs/apn/aws-networking-for-developers/
+- Amazon VPC for On-Premises Network Engineers
+.link https://aws.amazon.com/blogs/apn/amazon-vpc-for-on-premises-network-engineers-part-one
+- What is Amazon VPC
+.link https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html
+
+
+* Networking Glue
+- *VPC*: A network
+- *Subnet*: A HA section of our network
+- *InternetGateway*: A portal to the internet (like the closet in Narnia)
+- *VPCGatewayAttachment*: Puts the Narnia closet in our house.
+- *RouteTable*: Network traffic rule set
+- *Route*: A rule in the above route table
+- *SubnetRouteTableAssociation*: Glue the route table to the subnet
+- *SecurityGroup*: A firewall.
+
+* Place to put the container - ECR
+
+      ECRRepository:
+        Type: AWS::ECR::Repository
+
+* Understanding instance types and vCPU
+
+  Each vCPU is a thread of a CPU core, except for T2 instances.
+
+.image ./imgs/vcpu_setups.png
+
+* Place to run our algorithm (homework)
+
+- Batch Managed compute
+.link https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html
+
+- Instance optimized CPU
+.link https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-optimize-cpu.html
+
+* Place to run our algorithm - EC2
+
+MinvCpus:0 allows cluster to scale entirely down
+
+      ComputeEnvironment:
+        Type: AWS::Batch::ComputeEnvironment
+        Properties:
+          Type: MANAGED
+          ComputeResources:
+            Type: EC2
+            MinvCpus: 0
+            DesiredvCpus: 0
+            MaxvCpus: 64
+            InstanceTypes:
+              - optimal
+            Subnets:
+              - !Ref Subnet
+            SecurityGroupIds:
+              - !Ref SecurityGroup
+            InstanceRole: !Ref IamInstanceProfile
+          ServiceRole: !Ref BatchServiceRole
+
+* Place to store results - DynamoDB
+
+      DynamoTable2:
+        Type: AWS::DynamoDB::Table
+        DeletionPolicy: Delete
+        Properties:
+          GlobalSecondaryIndexes:
+            - IndexName: by_fitness
+              KeySchema:
+                - AttributeName: family
+                  KeyType: HASH
+                - AttributeName: fitness
+                  KeyType: RANGE
+              Projection:
+                ProjectionType: ALL
+          BillingMode: PAY_PER_REQUEST
+          AttributeDefinitions:
+            - AttributeName: key
+              AttributeType: S
+            - AttributeName: family
+              AttributeType: S
+            - AttributeName: fitness
+              AttributeType: N
+          KeySchema:
+            - AttributeName: key
+              KeyType: HASH
+
+* Configuring Batch jobs
+Reference your CloudFormation resources directly in the environment.  Notice how DynamoTable2 is the name of my above DynamoDB table.
+
+      JobDefinition:
+        Type: AWS::Batch::JobDefinition
+        Properties:
+          Type: container
+          ContainerProperties:
+            Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepository}:${ImageTag}
+            Vcpus: 4
+            Memory: 2000
+            Environment:
+              - Name: DYNAMODB_TABLE
+                Value: !Ref DynamoTable2
+              - Name: AWS_REGION
+                Value: !Sub ${AWS::Region}
+
+* AWS Permissions maze
+.image ./imgs/genetic_permissions.png
+
+* Triggering the job
+
+Learn the AWS-CLI
+Makes it easy to quickly script and start jobs
+Power users of aws-cli use JMESPath
+.link JMESPath http://jmespath.org/
+
+    STACK_NAME=genetic-sort-stack
+    function stack_output() {
+      # Print to stdout the value of a cloudformation stack output
+      local RES=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} \
+                  --query "Stacks[0].Outputs[?OutputKey=='${1}'].OutputValue" \
+                  --output text)
+      if [[ -z ${RES} ]]; then
+        exit 1
+      fi
+      echo ${RES}
+    }
+
+* Running it from the CLI
+
+    export NUM_JOBS=${NUM_JOBS-2}
+    export JOB_RUN_TIME=${JOB_RUN_TIME-1m}
+    export ARRAY_SIZE=${ARRAY_SIZE-1000}
+
+    function run_job() {
+        aws batch submit-job --job-name geneticsort \
+            --job-queue $(stack_output JobQueue) \
+            --job-definition $(stack_output JobDefinition) \
+            --array-properties "size=${NUM_JOBS}" \
+            --container-overrides "environment=[\
+                                     {name=ARRAY_SIZE,value=${ARRAY_SIZE}},\
+                                     {name=RAND_SEED,value=-1},\
+                                     {name=RUN_TIME,value=${JOB_RUN_TIME}}
+                                   ]"
+    }
+
+* Viewing the job on AWS Batch
+
+.image ./imgs/batch_running_job.png
+
+* Inspect job output with Cloudwatch Logs
+
+.image ./imgs/job_output.png

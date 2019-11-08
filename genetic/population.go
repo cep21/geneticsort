@@ -58,6 +58,28 @@ func (p *Population) Average() float64 {
 	return float64(sum) / float64(len(p.Individuals))
 }
 
+// START PLAY1OMIT
+func (p *Population) calculateFitnessForAll(numGoroutine int) {
+	var wg sync.WaitGroup
+	wg.Add(numGoroutine) // Wait for all goroutines to finish // HL1
+	individuals := make(chan Chromosome)
+	for i := 0; i < numGoroutine; i++ {
+		go func() {
+			defer wg.Done() // Mark a goroutine as done // HL1
+			for individual := range individuals {
+				individual.Fitness()
+			}
+		}()
+	}
+	for i := 0; i < len(p.Individuals); i++ {
+		individuals <- p.Individuals[i]
+	}
+	close(individuals)
+	wg.Wait()
+}
+// END PLAY1OMIT
+
+
 func (p *Population) calculateFitness(numGoroutine int) {
 	if numGoroutine < 2 {
 		for i := 0; i < len(p.Individuals); i++ {
@@ -120,3 +142,77 @@ func (p *Population) NextGeneration(ps ParentSelector, b Crossover, m Mutation, 
 	ret.Individuals[len(ret.Individuals)-1] = m.Mutate(p.Max(), rnd.Rand(0))
 	return ret
 }
+
+// START PLAY2OMIT
+func (p *Population) NextGen(ps ParentSelector, b Crossover, m Mutation, numP int, numGoroutine int, rnd RandForIndex) Population {
+	ret := Population{
+		Individuals: make([]Chromosome, len(p.Individuals)),
+	}
+	var wg sync.WaitGroup
+	wg.Add(numGoroutine)
+	idxChan := make(chan int)
+	for i := 0; i < numGoroutine; i++ {
+		go func() {
+			defer wg.Done()
+			for idx := range idxChan {
+				ret.Individuals[idx] = createNextIndividual() // Calculate that index // HL1
+			}
+		}()
+	}
+	for i := 0; i < len(p.Individuals)-1; i++ {
+		idxChan <- i // Which index to calculate // HL1
+	}
+	close(idxChan)
+	wg.Wait()
+	return ret
+}
+// END PLAY2OMIT
+
+func createNextIndividual() Chromosome { return nil }
+
+/**
+// START PLAY3OMIT
+// The code `rand.Int31` just calls Int31 on globalRand
+func Int31() int32 { return globalRand.Int31() }
+
+// globalRand is of type lockedSource
+var globalRand = New(&lockedSource{src: NewSource(1).(Source64)})
+
+type lockedSource struct {
+	lk  sync.Mutex
+	src Source64
+}
+
+// lockedSource is a global lock
+func (r *lockedSource) Int63() (n int64) {
+	r.lk.Lock()
+	n = r.src.Int63()
+	r.lk.Unlock()
+	return
+}
+// END PLAY3OMIT
+ */
+
+/**
+// START PLAY4OMIT
+  type Rand interface {
+	  Intn(int) int
+	  Int() int
+	  Int63() int64
+  }
+
+  type arrayRandForIdx struct {
+      rands []Rand
+  }
+
+  func (a *arrayRandForIdx) Rand(idx int) Rand {
+      return a.rands[idx]
+  }
+// END PLAY4OMIT
+
+// START PLAY5OMIT
+  type Mutation interface {
+      Mutate(in Chromosome, r Rand) Chromosome
+  }
+// END PLAY5OMIT
+ */
