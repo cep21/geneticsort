@@ -1,5 +1,7 @@
 Genetic algorithm discovery of worst case Go sort inputs powered by AWS Batch
 
+: So I asked an SEO company to write my title slide
+
 Jack Lindamood
 cep221@gmail.com
 
@@ -7,14 +9,27 @@ cep221@gmail.com
 - Rudimentary introduction to genetic algorithms
 - Inspire you to write and code your own on AWS
 
+: It would be too much to teach an entire ML course
+: It would be too much to teach all of AWS
+
 * Where I began
 
 .image ./imgs/sortdoc.png
+
+: This is where I began
+: Sort says it's O(n lg n), but how do you *know*
+: Well, we can just look at the code.  But what i the implementation of sort changes later on.
+: What if you had an API and wanted to break it, or find the worse possible input
 
 Question:
 - Given a black box API, how do you discover the slowest possible input?
 
 * Genetic algorithm 101
+
+* Scenario
+You're a movie producer and you want a plot to the next big adventure.
+
+You can think of movie plots and give them to a focus group to rate.
 
 * Chromosome
 
@@ -107,6 +122,8 @@ Question:
 
 * Code Layout
 
+: Prefer flatter shallow hierarchies
+: An alternative would be to give each aspect of genetic algorithms their own package: (mutation, crossover, etc)
 : Base components of genetic algorithms belong in their own package
 : Implementations for specific populations can go in their own subdirectory.
 
